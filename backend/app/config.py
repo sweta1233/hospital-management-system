@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from sqlalchemy.pool import NullPool
 
 
 def _fix_database_url(url: str | None) -> str | None:
@@ -32,7 +33,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
-        "pool_recycle": 300,
+        "poolclass": NullPool,
     }
 
     # JWT

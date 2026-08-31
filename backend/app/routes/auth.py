@@ -21,14 +21,15 @@ auth_bp = Blueprint("auth", __name__)
 
 def generate_patient_id():
     """Generate unique patient ID like PAT000001"""
-    last_patient = Patient.query.order_by(Patient.id.desc()).first()
-    if last_patient and last_patient.patient_id:
-        try:
+    try:
+        last_patient = Patient.query.order_by(Patient.id.desc()).first()
+        if last_patient and last_patient.patient_id:
             num = int(last_patient.patient_id.replace("PAT", ""))
             return f"PAT{num + 1:06d}"
-        except:
-            pass
-    return "PAT000001"
+    except Exception:
+        pass
+    import time
+    return f"PAT{int(time.time()) % 1000000:06d}"
 
 
 @auth_bp.route("/register", methods=["POST"])
@@ -143,6 +144,9 @@ def patient_register():
         return error_response("Invalid date format. Use YYYY-MM-DD", "INVALID_DATE_FORMAT", 400)
 
     try:
+        # Pre-compute patient ID
+        new_patient_id = generate_patient_id()
+
         # Create User account
         password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
 
@@ -169,7 +173,7 @@ def patient_register():
 
         # Create Patient profile
         patient = Patient(
-            patient_id=generate_patient_id(),
+            patient_id=new_patient_id,
             user_id=user.id,
             first_name=first_name,
             last_name=last_name,
