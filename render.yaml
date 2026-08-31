@@ -1,0 +1,41 @@
+services:
+  # ── Flask REST API & WebSocket Backend ───────────────────
+  - type: web
+    name: hms-backend
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python init_db.py
+    startCommand: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT run:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hms-postgres
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: RATELIMIT_STORAGE_URI
+        value: memory://
+      - key: SOCKETIO_ASYNC_MODE
+        value: eventlet
+      - key: ADMIN_EMAIL
+        value: admin@hms.local
+      - key: ADMIN_PASSWORD
+        value: Admin@123456
+      - key: SEED_DB
+        value: "true"
+
+databases:
+  # ── Managed PostgreSQL Database ──────────────────────────
+  - name: hms-postgres
+    region: oregon
+    plan: free
+    databaseName: hms_db
+    user: hms_user
