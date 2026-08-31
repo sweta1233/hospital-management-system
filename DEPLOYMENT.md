@@ -74,6 +74,7 @@ git push -u origin main
 4. Under **Environment Variables**, add:
    | Key | Value | Description |
    |-----|-------|------------- |
+   | `PYTHON_VERSION` | `3.11.9` | Python runtime version |
    | `FLASK_ENV` | `production` | Production environment |
    | `SECRET_KEY` | *(Click Generate)* | Session secret key |
    | `JWT_SECRET_KEY` | *(Click Generate)* | JWT signing key |
