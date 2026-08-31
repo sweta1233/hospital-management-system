@@ -1,6 +1,10 @@
 # 🚀 Deployment Guide: Hospital Management System (HMS)
 
-This guide walks you through deploying the **Hospital Management System** to **GitHub**, **Render** (Backend + PostgreSQL Database), and **Vercel** (Frontend).
+### 🌐 Live Production Links
+- **Frontend (Vercel)**: [https://hospital-management-system-bay-ten.vercel.app](https://hospital-management-system-bay-ten.vercel.app)
+- **Backend API (Render)**: [https://hms-backend-vw82.onrender.com](https://hms-backend-vw82.onrender.com)
+- **Swagger Documentation**: [https://hms-backend-vw82.onrender.com/docs](https://hms-backend-vw82.onrender.com/docs)
+- **GitHub Repository**: [https://github.com/sweta1233/hospital-management-system](https://github.com/sweta1233/hospital-management-system)
 
 ---
 

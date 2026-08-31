@@ -1,6 +1,14 @@
 # 🏥 Hospital Management System (HMS)
 
-**A production-quality, full-stack Hospital Management System** built with modern technologies: React + Vite, Python Flask, PostgreSQL, Redis, Celery, WebSockets, Docker.
+**A production-quality, full-stack Hospital Management System** built with modern technologies: React 18, Vite, Tailwind CSS, Python Flask, PostgreSQL, Redis, Celery, WebSockets, Docker.
+
+---
+
+### 🌐 Live Production Deployments
+- 💻 **Live Frontend (Vercel)**: [https://hospital-management-system-bay-ten.vercel.app](https://hospital-management-system-bay-ten.vercel.app)
+- ⚙️ **Live Backend API (Render)**: [https://hms-backend-vw82.onrender.com](https://hms-backend-vw82.onrender.com)
+- 📚 **Live Swagger Docs**: [https://hms-backend-vw82.onrender.com/docs](https://hms-backend-vw82.onrender.com/docs)
+- 🗄️ **Database**: Managed PostgreSQL on Render
 
 ---
 
