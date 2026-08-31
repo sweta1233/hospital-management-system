@@ -90,7 +90,9 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = _fix_database_url(os.environ.get("DATABASE_URL"))
+    SQLALCHEMY_DATABASE_URI = _fix_database_url(
+        os.environ.get("DATABASE_URL") or "sqlite:///hms_production.db"
+    )
 
 
 class TestingConfig(Config):

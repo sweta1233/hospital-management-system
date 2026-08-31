@@ -83,13 +83,17 @@ def create_app(config_name: str | None = None) -> Flask:
     def missing_token_callback(error):
         return {"success": False, "message": "Authorization token is required", "error": "MISSING_TOKEN"}, 401
 
-    # ── Import models so Flask-Migrate picks them up ───────
+    # ── Import models and auto-create tables ──────────────
     with app.app_context():
         from app.models import (  # noqa: F401
             user, patient, doctor, department, nurse, appointment,
             medical_record, vital, prescription, medicine, laboratory,
             admission, billing, notification, chat, audit, otp,
         )
+        try:
+            db.create_all()
+        except Exception as e:
+            app.logger.warning(f"Could not auto-create database tables on startup: {e}")
 
     # ── Register blueprints ────────────────────────────────
     from app.routes.auth import auth_bp

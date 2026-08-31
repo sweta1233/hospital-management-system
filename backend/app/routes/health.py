@@ -1,5 +1,7 @@
 """Health check endpoint."""
 from flask import Blueprint
+from sqlalchemy import text
+from app.extensions import db
 from app.utils.responses import success_response
 
 health_bp = Blueprint("health", __name__)
@@ -16,4 +18,17 @@ def health_check():
       200:
         description: Service is healthy
     """
-    return success_response(data={"status": "healthy"}, message="HMS API is running")
+    db_status = "unknown"
+    try:
+        db.session.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {e}"
+
+    return success_response(
+        data={
+            "status": "healthy" if db_status == "connected" else "degraded",
+            "database": db_status,
+        },
+        message="HMS API is running"
+    )
