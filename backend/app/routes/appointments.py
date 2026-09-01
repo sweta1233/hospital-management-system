@@ -1,17 +1,162 @@
 """Appointment management routes."""
-from datetime import datetime, time, date
+from datetime import datetime, time, date, timedelta
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db, socketio
 from app.models.user import User
 from app.models.appointment import Appointment
-from app.models.doctor import Doctor
+from app.models.doctor import Doctor, DoctorAvailability
 from app.models.patient import Patient
 from app.models.notification import Notification
 from app.utils.responses import success_response, error_response, paginated_response
 from app.utils.auth import role_required
 
 appointments_bp = Blueprint("appointments", __name__)
+
+
+@appointments_bp.route("/available-slots", methods=["GET"])
+@jwt_required()
+def get_available_slots():
+    """
+    Get 1-month (up to 35 days) advance time slot grid for a doctor,
+    annotating each slot with its availability and real-time locked status.
+    """
+    doctor_id = request.args.get("doctor_id", type=int)
+    start_date_str = request.args.get("start_date")
+    days_count = request.args.get("days", default=30, type=int)
+    days_count = min(max(days_count, 1), 45)  # clamp between 1 and 45 days
+
+    if not doctor_id:
+        return error_response("doctor_id parameter is required.", "MISSING_DOCTOR_ID", 400)
+
+    doctor = Doctor.query.get(doctor_id)
+    if not doctor:
+        return error_response("Doctor not found.", "NOT_FOUND", 404)
+
+    today = date.today()
+    if start_date_str:
+        try:
+            start_d = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        except Exception:
+            start_d = today
+    else:
+        start_d = today
+
+    end_d = start_d + timedelta(days=days_count - 1)
+
+    # Fetch all booked appointments for this doctor in this date window
+    booked_appts = Appointment.query.filter(
+        Appointment.doctor_id == doctor_id,
+        Appointment.appointment_date >= start_d,
+        Appointment.appointment_date <= end_d,
+        Appointment.status.notin_([Appointment.STATUS_CANCELLED]),
+    ).all()
+
+    # Map of (date_str, time_str) -> appointment info
+    booked_map = {}
+    for appt in booked_appts:
+        d_str = appt.appointment_date.isoformat()
+        t_str = appt.start_time.strftime("%H:%M")
+        booked_map[(d_str, t_str)] = {
+            "appointment_id": appt.id,
+            "patient_id": appt.patient_id,
+            "patient_name": appt.patient.full_name if appt.patient else "Booked Patient",
+            "status": appt.status,
+        }
+
+    # Fetch custom doctor availabilities if any
+    availabilities = DoctorAvailability.query.filter_by(doctor_id=doctor_id, is_active=True).all()
+    avail_by_weekday = {}
+    for a in availabilities:
+        avail_by_weekday[a.day_of_week] = a
+
+    default_times = [
+        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+        "12:00", "12:30", "14:00", "14:30", "15:00", "15:30",
+        "16:00", "16:30", "17:00", "17:30", "18:00"
+    ]
+
+    now_time = datetime.now().time()
+    days_data = []
+
+    for i in range(days_count):
+        cur_date = start_d + timedelta(days=i)
+        cur_date_str = cur_date.isoformat()
+        weekday = cur_date.weekday()  # 0 = Monday ... 6 = Sunday
+
+        # Determine daily slots
+        daily_slot_times = list(default_times)
+        if weekday in avail_by_weekday:
+            custom_avail = avail_by_weekday[weekday]
+            if custom_avail.start_time and custom_avail.end_time:
+                generated = []
+                dur = custom_avail.slot_duration or 30
+                curr = datetime.combine(cur_date, custom_avail.start_time)
+                end_curr = datetime.combine(cur_date, custom_avail.end_time)
+                while curr + timedelta(minutes=dur) <= end_curr:
+                    generated.append(curr.strftime("%H:%M"))
+                    curr += timedelta(minutes=dur)
+                if generated:
+                    daily_slot_times = generated
+
+        # Compute slot states
+        slots = []
+        available_count = 0
+        booked_count = 0
+
+        for t_str in daily_slot_times:
+            is_booked = (cur_date_str, t_str) in booked_map
+
+            # Check if past
+            is_past = False
+            if cur_date < today:
+                is_past = True
+            elif cur_date == today:
+                try:
+                    slot_t = datetime.strptime(t_str, "%H:%M").time()
+                    if slot_t <= now_time:
+                        is_past = True
+                except Exception:
+                    pass
+
+            is_available = (not is_booked) and (not is_past)
+            if is_available:
+                available_count += 1
+            if is_booked:
+                booked_count += 1
+
+            booking_info = booked_map.get((cur_date_str, t_str))
+            slots.append({
+                "time": t_str,
+                "is_available": is_available,
+                "is_booked": is_booked,
+                "is_past": is_past,
+                "booked_by_patient_id": booking_info["patient_id"] if booking_info else None,
+                "status": booking_info["status"] if booking_info else ("past" if is_past else "open"),
+            })
+
+        days_data.append({
+            "date": cur_date_str,
+            "day_name": cur_date.strftime("%A"),
+            "formatted_date": cur_date.strftime("%b %d, %Y"),
+            "total_slots": len(slots),
+            "available_slots": available_count,
+            "booked_slots": booked_count,
+            "is_today": cur_date == today,
+            "is_past_day": cur_date < today,
+            "slots": slots,
+        })
+
+    return success_response(
+        data={
+            "doctor": doctor.to_dict(),
+            "start_date": start_d.isoformat(),
+            "end_date": end_d.isoformat(),
+            "days_count": days_count,
+            "schedule": days_data,
+        },
+        message="Available slots loaded successfully"
+    )
 
 
 @appointments_bp.route("", methods=["GET"])

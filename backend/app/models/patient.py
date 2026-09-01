@@ -77,6 +77,7 @@ class Patient(db.Model):
         data = {
             "id": self.id,
             "patient_id": self.patient_id,
+            "user_id": self.user_id,
             "first_name": self.first_name,
             "last_name": self.last_name,
             "full_name": self.full_name,

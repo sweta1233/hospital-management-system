@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { logout, setUser } from './store/slices/authSlice'
-import { disconnectSocket } from './services/socket'
+import { initSocket, disconnectSocket } from './services/socket'
 import api from './services/api'
 import { getUserRoles, hasAnyRole } from './utils/auth'
 import Sidebar from './components/Sidebar'
 import NotificationModal from './components/NotificationModal'
+import IncomingCallModal from './components/IncomingCallModal'
 
 // Public Auth & Landing Pages
 import LandingPage from './pages/LandingPage'
@@ -29,6 +30,7 @@ import AdmissionsPage from './pages/AdmissionsPage'
 import BillingPage from './pages/BillingPage'
 import ChatPage from './pages/ChatPage'
 import ArogyaAIPage from './pages/ArogyaAIPage'
+import CancerPredictionPage from './pages/CancerPredictionPage'
 
 import { Bell, LogOut, Menu, ShieldAlert } from 'lucide-react'
 
@@ -101,6 +103,7 @@ function Layout({ children }) {
       </div>
 
       <NotificationModal isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
+      <IncomingCallModal />
     </div>
   )
 }
@@ -159,6 +162,7 @@ export default function App() {
         .then((res) => {
           if (res.data?.data) {
             dispatch(setUser(res.data.data))
+            initSocket(token, res.data.data)
           }
         })
         .catch((err) => {
@@ -168,6 +172,16 @@ export default function App() {
         })
     }
   }, [dispatch])
+
+  // Initialize/re-sync socket whenever auth user updates
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const token = localStorage.getItem('access_token')
+      if (token) {
+        initSocket(token, user)
+      }
+    }
+  }, [isAuthenticated, user])
 
   // Determine user home dashboard
   const userRoles = getUserRoles(user)
@@ -215,6 +229,7 @@ export default function App() {
       <Route path="/billing" element={<ProtectedRoute allowedRoles={['admin', 'receptionist', 'patient']}><BillingPage /></ProtectedRoute>} />
       <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/arogya-ai" element={<ProtectedRoute><ArogyaAIPage /></ProtectedRoute>} />
+      <Route path="/cancer-prediction" element={<ProtectedRoute><CancerPredictionPage /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -8,10 +8,11 @@ import {
   Banknote, QrCode, Star, MapPin, ChevronDown, RefreshCw,
   Mic, MicOff, Camera, CameraOff, FileText, Pill, Send,
   Trash2, ShieldCheck, Download, Printer, Award, Activity,
-  Lock, AlertTriangle, Sparkles, Timer
+  Lock, AlertTriangle, Sparkles, Timer, CheckCircle, Ban
 } from 'lucide-react'
 import api from '../services/api'
-import { hasAnyRole } from '../utils/auth'
+import { getUserRoles, hasAnyRole } from '../utils/auth'
+import { initiateVideoCall, endVideoCall } from '../services/socket'
 
 const PAYMENT_METHODS = [
   { id: 'card', label: 'Credit / Debit Card', icon: CreditCard, color: 'text-cyan-400', border: 'hover:border-cyan-500' },
@@ -47,6 +48,17 @@ export default function AppointmentsPage() {
   // Standalone Prescription Modal (for offline/in-person checkups)
   const [prescribeAppt, setPrescribeAppt] = useState(null)
 
+  // 1-Month / Advance Slot Schedule State
+  const [availableSlots, setAvailableSlots] = useState([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
+  const [selectedSlotKey, setSelectedSlotKey] = useState('')
+
+  // Date Boundaries for 1-Month Advance Booking
+  const today = new Date()
+  const minDateStr = today.toISOString().split('T')[0]
+  const maxDateObj = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+  const maxDateStr = maxDateObj.toISOString().split('T')[0]
+
   // Prescription Form State (shared by drawer and modal)
   const [diagnosis, setDiagnosis] = useState('')
   const [prescriptionItems, setPrescriptionItems] = useState([
@@ -55,14 +67,17 @@ export default function AppointmentsPage() {
   const [savingPrescription, setSavingPrescription] = useState(false)
 
   const user = useSelector((state) => state.auth.user)
-  const isPatient = hasAnyRole(user, ['patient'])
-  const isDoctor = hasAnyRole(user, ['doctor', 'admin'])
+  const userRoles = getUserRoles(user)
+  const isPatient = userRoles.includes('patient') || Boolean(user?.patient?.id)
+  const isDoctor = userRoles.includes('doctor') || Boolean(user?.doctor?.id)
+  const isAdmin = userRoles.includes('admin')
+  const isAdminOnly = isAdmin && !isDoctor && !isPatient
   const patientProfileId = user?.patient?.id || null
 
   const [formData, setFormData] = useState({
     patient_id: '',
     doctor_id: '',
-    appointment_date: new Date().toISOString().split('T')[0],
+    appointment_date: minDateStr,
     start_time: '10:00',
     end_time: '10:30',
     reason: '',
@@ -72,7 +87,7 @@ export default function AppointmentsPage() {
 
   // Helper: Verify if appointment call is currently allowed based on date & time
   const checkCallTimeAvailability = (appt) => {
-    // Doctors and Admins can start call at any time
+    // Doctors can start call at any time
     if (isDoctor) {
       return { canCall: true, reason: 'Doctor priority line active', isNow: true }
     }
@@ -161,9 +176,28 @@ export default function AppointmentsPage() {
   }
 
   const handleAttemptVideoCall = (appt) => {
+    if (isAdminOnly) {
+      alert('Administrative Notice: Administrators without an assigned clinical doctor or patient profile cannot initiate video consultations. Please log in as the assigned doctor or patient.')
+      return
+    }
+
     const check = checkCallTimeAvailability(appt)
     if (check.canCall) {
       setVideoCallAppt(appt)
+      try {
+        const isDocCaller = isDoctor || user?.id === appt.doctor_user_id
+        initiateVideoCall({
+          appointment_id: appt.id,
+          caller_id: user?.id,
+          caller_name: user?.full_name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Medical User'),
+          caller_role: isDocCaller ? 'doctor' : 'patient',
+          recipient_id: isDocCaller ? (appt.patient_user_id || appt.patient_id) : (appt.doctor_user_id || appt.doctor_id),
+          recipient_name: isDocCaller ? appt.patient_name : appt.doctor_name,
+          appointment_time: `${appt.appointment_date} ${appt.start_time}`,
+        })
+      } catch (e) {
+        console.warn('Video call socket initiation warning:', e)
+      }
     } else {
       setTimeLockNotice({
         appt,
@@ -172,6 +206,54 @@ export default function AppointmentsPage() {
       })
     }
   }
+
+  const handleEndCall = () => {
+    if (videoCallAppt) {
+      try {
+        endVideoCall({
+          appointment_id: videoCallAppt.id,
+          caller_id: user?.id,
+        })
+      } catch (e) {}
+    }
+    setVideoCallAppt(null)
+  }
+
+  // Real-time slot availability sync for selected doctor & date
+  useEffect(() => {
+    if (showModal && formData.doctor_id && formData.appointment_date) {
+      setLoadingSlots(true)
+      api.get(`/appointments/available-slots?doctor_id=${formData.doctor_id}&start_date=${formData.appointment_date}&days=1`)
+        .then((res) => {
+          const schedule = res.data?.data?.schedule || []
+          if (schedule.length > 0) {
+            const slots = schedule[0].slots || []
+            setAvailableSlots(slots)
+            const currentSelected = slots.find(s => s.start_time === formData.start_time && s.is_available)
+            if (!currentSelected) {
+              const firstAvail = slots.find(s => s.is_available)
+              if (firstAvail) {
+                setFormData(prev => ({
+                  ...prev,
+                  start_time: firstAvail.start_time,
+                  end_time: firstAvail.end_time
+                }))
+                setSelectedSlotKey(firstAvail.start_time)
+              }
+            } else {
+              setSelectedSlotKey(currentSelected.start_time)
+            }
+          } else {
+            setAvailableSlots([])
+          }
+        })
+        .catch((err) => {
+          console.warn('Slot schedule load failed:', err)
+          setAvailableSlots([])
+        })
+        .finally(() => setLoadingSlots(false))
+    }
+  }, [showModal, formData.doctor_id, formData.appointment_date])
 
   const fetchAppointments = async () => {
     try {
@@ -998,7 +1080,7 @@ export default function AppointmentsPage() {
                     </button>
 
                     <button
-                      onClick={() => setVideoCallAppt(null)}
+                      onClick={handleEndCall}
                       className="px-6 h-12 rounded-2xl btn-rose text-white font-extrabold text-xs flex items-center space-x-2 transition shadow-lg cursor-pointer"
                     >
                       <Phone className="w-5 h-5 rotate-[135deg]" />
@@ -1122,38 +1204,125 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
 
-                  {/* Date & Slots */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-slate-300 font-bold uppercase tracking-wider mb-1.5">Date *</label>
-                      <input
-                        type="date"
-                        required
-                        value={formData.appointment_date}
-                        onChange={(e) => setFormData({ ...formData, appointment_date: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-2xl glass-input text-slate-100 focus:outline-none text-xs"
-                      />
+                  {/* 30-Day Advance Booking & Interactive Slot Lock Grid */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-slate-300 font-bold uppercase tracking-wider">
+                        Consultation Date (1-Month Booking Window) *
+                      </label>
+                      <span className="text-[10px] text-emerald-400 font-semibold">
+                        30-Day Schedule Active
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-slate-300 font-bold uppercase tracking-wider mb-1.5">Start Time *</label>
-                      <input
-                        type="time"
-                        required
-                        value={formData.start_time}
-                        onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-2xl glass-input text-slate-100 focus:outline-none text-xs font-mono font-bold"
-                      />
+                    <input
+                      type="date"
+                      required
+                      min={minDateStr}
+                      max={maxDateStr}
+                      value={formData.appointment_date}
+                      onChange={(e) => setFormData({ ...formData, appointment_date: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-2xl glass-input text-slate-100 focus:outline-none text-xs font-semibold bg-slate-900"
+                    />
+                  </div>
+
+                  {/* Real-time Time Slots & Locked Slot Visualizer */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-slate-300 font-bold uppercase tracking-wider">
+                        Select Consultation Slot (Auto-Locked When Booked) *
+                      </label>
+                      {loadingSlots && (
+                        <span className="text-[10px] text-cyan-400 animate-pulse font-medium">
+                          Checking doctor schedule...
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-slate-300 font-bold uppercase tracking-wider mb-1.5">End Time *</label>
-                      <input
-                        type="time"
-                        required
-                        value={formData.end_time}
-                        onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-2xl glass-input text-slate-100 focus:outline-none text-xs font-mono font-bold"
-                      />
-                    </div>
+
+                    {availableSlots.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 border border-slate-800/80 rounded-2xl bg-slate-950/50">
+                        {availableSlots.map((slot) => {
+                          const isSelected = selectedSlotKey === slot.start_time
+                          if (slot.is_booked) {
+                            return (
+                              <div
+                                key={slot.start_time}
+                                className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-500/20 text-rose-300 flex flex-col items-center justify-center opacity-60 cursor-not-allowed select-none"
+                                title="This slot is already booked and locked for this doctor. Another patient cannot book this same timing."
+                              >
+                                <span className="text-[11px] font-mono font-bold line-through text-slate-400">
+                                  {slot.start_time} - {slot.end_time}
+                                </span>
+                                <span className="text-[9px] font-extrabold text-rose-400 flex items-center mt-0.5">
+                                  🔒 Booked & Locked
+                                </span>
+                              </div>
+                            )
+                          }
+
+                          if (slot.is_past) {
+                            return (
+                              <div
+                                key={slot.start_time}
+                                className="p-2.5 rounded-xl bg-slate-900/40 border border-slate-800 text-slate-500 flex flex-col items-center justify-center opacity-40 cursor-not-allowed select-none"
+                              >
+                                <span className="text-[11px] font-mono font-bold">{slot.start_time}</span>
+                                <span className="text-[9px] text-slate-500">Passed</span>
+                              </div>
+                            )
+                          }
+
+                          return (
+                            <button
+                              key={slot.start_time}
+                              type="button"
+                              onClick={() => {
+                                setSelectedSlotKey(slot.start_time)
+                                setFormData({
+                                  ...formData,
+                                  start_time: slot.start_time,
+                                  end_time: slot.end_time,
+                                })
+                              }}
+                              className={`p-2.5 rounded-xl border text-center transition flex flex-col items-center justify-center cursor-pointer ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/30 border-emerald-400 text-emerald-300 ring-2 ring-emerald-400 shadow-md shadow-emerald-500/20'
+                                  : 'bg-slate-900 border-slate-700/80 text-slate-200 hover:border-emerald-500/60 hover:bg-slate-800'
+                              }`}
+                            >
+                              <span className="text-xs font-mono font-extrabold">
+                                {slot.start_time} - {slot.end_time}
+                              </span>
+                              <span className="text-[9px] font-bold text-emerald-400 mt-0.5">
+                                {isSelected ? '✓ Selected Slot' : 'Available'}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1">Start Time</label>
+                          <input
+                            type="time"
+                            required
+                            value={formData.start_time}
+                            onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl glass-input text-slate-100 focus:outline-none text-xs font-mono font-bold bg-slate-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1">End Time</label>
+                          <input
+                            type="time"
+                            required
+                            value={formData.end_time}
+                            onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl glass-input text-slate-100 focus:outline-none text-xs font-mono font-bold bg-slate-900"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Reason */}

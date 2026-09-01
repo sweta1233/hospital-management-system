@@ -115,6 +115,7 @@ def create_app(config_name: str | None = None) -> Flask:
     from app.routes.chat import chat_bp
     from app.routes.dashboard import dashboard_bp
     from app.routes.health import health_bp
+    from app.routes.cancer_prediction import cancer_prediction_bp
 
     app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
@@ -135,6 +136,7 @@ def create_app(config_name: str | None = None) -> Flask:
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(chat_bp, url_prefix="/api/chat")
     app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
+    app.register_blueprint(cancer_prediction_bp, url_prefix="/api/cancer-prediction")
 
     # ── Register SocketIO events ───────────────────────────
     from app.websocket import events  # noqa: F401

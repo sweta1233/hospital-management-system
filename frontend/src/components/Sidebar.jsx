@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux'
 import {
   LayoutDashboard, Users, Calendar, FileText, Activity,
   Pill, FlaskConical, Bed, CreditCard, MessageSquare,
-  ShieldCheck, UserCog, HeartPulse, Sparkles, Video, Bot
+  ShieldCheck, UserCog, HeartPulse, Sparkles, Video, Bot, Dna
 } from 'lucide-react'
 import { getUserRoles, hasAnyRole } from '../utils/auth'
 
@@ -32,6 +32,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'Staff Management', path: '/admin/staff', icon: UserCog, color: 'text-purple-400', activeBg: 'from-purple-500/20 to-indigo-600/20 border-purple-500/40 text-purple-300', roles: ['admin'] },
     { name: 'Patients Directory', path: '/patients', icon: Users, color: 'text-blue-400', activeBg: 'from-blue-500/20 to-cyan-600/20 border-blue-500/40 text-blue-300', roles: ['admin', 'doctor', 'nurse', 'receptionist'] },
     { name: 'Appointments & Video', path: '/appointments', icon: Calendar, color: 'text-cyan-400', activeBg: 'from-cyan-500/20 to-blue-600/20 border-cyan-500/40 text-cyan-300', roles: ['admin', 'doctor', 'nurse', 'receptionist', 'patient'] },
+    { name: 'Cancer Prediction (99%)', path: '/cancer-prediction', icon: Dna, color: 'text-rose-400', activeBg: 'from-rose-500/20 to-pink-600/20 border-rose-500/40 text-rose-300', roles: ['admin', 'doctor', 'nurse', 'receptionist', 'pharmacist', 'lab_technician', 'patient'] },
     { name: 'Prescriptions (Rx)', path: '/prescriptions', icon: Pill, color: 'text-purple-400', activeBg: 'from-purple-500/20 to-pink-600/20 border-purple-500/40 text-purple-300', roles: ['admin', 'doctor', 'pharmacist', 'patient'] },
     { name: 'Pharmacy Inventory', path: '/pharmacy', icon: Activity, color: 'text-amber-400', activeBg: 'from-amber-500/20 to-orange-600/20 border-amber-500/40 text-amber-300', roles: ['admin', 'pharmacist'] },
     { name: 'Pathology Lab', path: '/laboratory', icon: FlaskConical, color: 'text-emerald-400', activeBg: 'from-emerald-500/20 to-green-600/20 border-emerald-500/40 text-emerald-300', roles: ['admin', 'doctor', 'lab_technician', 'patient'] },

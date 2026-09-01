@@ -22,6 +22,9 @@ itsdangerous==2.2.0
 Pillow>=10.4.0
 python-dateutil==2.9.0.post0
 pytz==2024.1
+numpy>=1.26.0
+scikit-learn>=1.4.0
+pypdf>=4.0.0
 
 # Testing
 pytest==8.3.2
