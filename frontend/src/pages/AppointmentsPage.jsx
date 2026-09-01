@@ -28,6 +28,7 @@ export default function AppointmentsPage() {
   const [medicines, setMedicines] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
+  const [selectedDateFilter, setSelectedDateFilter] = useState('') // '' = all dates, or 'YYYY-MM-DD'
   const [showModal, setShowModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [showPayModal, setShowPayModal] = useState(null)
@@ -53,11 +54,23 @@ export default function AppointmentsPage() {
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [selectedSlotKey, setSelectedSlotKey] = useState('')
 
-  // Date Boundaries for 1-Month Advance Booking
+  // Date Boundaries for 1-Month (30-day) Advance Booking
   const today = new Date()
   const minDateStr = today.toISOString().split('T')[0]
   const maxDateObj = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
   const maxDateStr = maxDateObj.toISOString().split('T')[0]
+
+  // Generate 30 upcoming days for quick single-date selection ribbon
+  const upcoming30Days = []
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today.getTime() + i * 24 * 60 * 60 * 1000)
+    const iso = d.toISOString().split('T')[0]
+    const dayLabel = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short' })
+    const dateNum = d.getDate()
+    const monthName = d.toLocaleDateString('en-US', { month: 'short' })
+    const fullDateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+    upcoming30Days.push({ iso, dayLabel, dateNum, monthName, fullDateLabel })
+  }
 
   // Prescription Form State (shared by drawer and modal)
   const [diagnosis, setDiagnosis] = useState('')
@@ -258,7 +271,11 @@ export default function AppointmentsPage() {
   const fetchAppointments = async () => {
     try {
       setLoading(true)
-      const res = await api.get(`/appointments?status=${statusFilter}&per_page=50`)
+      let url = `/appointments?status=${statusFilter}&per_page=50`
+      if (selectedDateFilter) {
+        url += `&date=${selectedDateFilter}`
+      }
+      const res = await api.get(url)
       setAppointments(res.data?.data?.items || [])
     } catch (err) {
       console.error(err)
@@ -301,7 +318,7 @@ export default function AppointmentsPage() {
     }
   }
 
-  useEffect(() => { fetchAppointments() }, [statusFilter])
+  useEffect(() => { fetchAppointments() }, [statusFilter, selectedDateFilter])
   useEffect(() => { fetchMeta() }, [])
 
   // Video Call Stream & Timer Management
@@ -535,29 +552,101 @@ export default function AppointmentsPage() {
 
         {/* Main Appointments Table Card (Multi-Color Header & Glow) */}
         <div className="glass-panel rounded-3xl border-2 border-emerald-500/30 overflow-hidden shadow-2xl bg-slate-900/90 backdrop-blur-2xl">
-          {/* Status Filter Tabs (Multi-Color Active States) */}
-          <div className="p-4 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3 bg-slate-950/60">
-            <div className="flex flex-wrap gap-2">
-              {filterTabs.map(({ key, label }) => {
-                const isSelected = statusFilter === key
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setStatusFilter(key)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 text-white shadow-lg shadow-emerald-500/25'
-                        : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
+          {/* Status & Single-Date Filter Toolbar */}
+          <div className="p-4 border-b border-slate-800/80 space-y-3 bg-slate-950/60">
+            {/* Top row: Status Filter Tabs */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {filterTabs.map(({ key, label }) => {
+                  const isSelected = statusFilter === key
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setStatusFilter(key)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 text-white shadow-lg shadow-emerald-500/25'
+                          : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="text-xs text-slate-400 font-mono">
+                Total: <span className="text-emerald-400 font-bold">{appointments.length}</span> consultations
+              </div>
             </div>
 
-            <div className="text-xs text-slate-400 font-mono">
-              Total: <span className="text-emerald-400 font-bold">{appointments.length}</span> consultations
+            {/* Bottom row: Single Date Filter Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/50">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center mr-1">
+                  <Calendar className="w-3.5 h-3.5 mr-1 text-cyan-400" />
+                  Filter by Date:
+                </span>
+
+                <button
+                  onClick={() => setSelectedDateFilter('')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedDateFilter === ''
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-xs'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  All Dates
+                </button>
+
+                <button
+                  onClick={() => setSelectedDateFilter(minDateStr)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedDateFilter === minDateStr
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-xs'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  Today
+                </button>
+
+                {upcoming30Days[1] && (
+                  <button
+                    onClick={() => setSelectedDateFilter(upcoming30Days[1].iso)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      selectedDateFilter === upcoming30Days[1].iso
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-xs'
+                        : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    Tomorrow
+                  </button>
+                )}
+
+                <div className="flex items-center space-x-1.5 ml-1">
+                  <input
+                    type="date"
+                    value={selectedDateFilter}
+                    onChange={(e) => setSelectedDateFilter(e.target.value)}
+                    className="px-3 py-1 rounded-lg glass-input text-xs text-slate-200 focus:outline-none bg-slate-900 border border-slate-700"
+                  />
+                  {selectedDateFilter && (
+                    <button
+                      onClick={() => setSelectedDateFilter('')}
+                      className="px-2 py-1 text-[11px] text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg transition cursor-pointer"
+                      title="Clear date filter"
+                    >
+                      ✕ Clear Date
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {selectedDateFilter && (
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-cyan-300 text-[11px] font-semibold">
+                  <span>Showing appointments for single date: <strong className="text-white ml-1">{selectedDateFilter}</strong></span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1204,56 +1293,108 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
 
-                  {/* 30-Day Advance Booking & Interactive Slot Lock Grid */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-slate-300 font-bold uppercase tracking-wider">
-                        Consultation Date (1-Month Booking Window) *
-                      </label>
-                      <span className="text-[10px] text-emerald-400 font-semibold">
-                        30-Day Schedule Active
-                      </span>
-                    </div>
-                    <input
-                      type="date"
-                      required
-                      min={minDateStr}
-                      max={maxDateStr}
-                      value={formData.appointment_date}
-                      onChange={(e) => setFormData({ ...formData, appointment_date: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-2xl glass-input text-slate-100 focus:outline-none text-xs font-semibold bg-slate-900"
-                    />
-                  </div>
-
-                  {/* Real-time Time Slots & Locked Slot Visualizer */}
+                  {/* Single-Date Selection: Interactive 30-Day Calendar Ribbon + Date Input */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-slate-300 font-bold uppercase tracking-wider">
-                        Select Consultation Slot (Auto-Locked When Booked) *
+                      <label className="block text-slate-300 font-bold uppercase tracking-wider text-xs">
+                        Select Consultation Date (Single Date Selection) *
                       </label>
-                      {loadingSlots && (
-                        <span className="text-[10px] text-cyan-400 animate-pulse font-medium">
-                          Checking doctor schedule...
+                      <span className="text-[11px] text-emerald-400 font-extrabold flex items-center">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                        Selected Date: {upcoming30Days.find(d => d.iso === formData.appointment_date)?.fullDateLabel || formData.appointment_date}
+                      </span>
+                    </div>
+
+                    {/* 30-Day Advance Scrollable Date Ribbon - ONLY ONE Selected Day Highlighted */}
+                    <div className="flex space-x-2 overflow-x-auto pb-2 mb-2.5">
+                      {upcoming30Days.map((d) => {
+                        const isDateSelected = formData.appointment_date === d.iso
+                        return (
+                          <button
+                            key={d.iso}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, appointment_date: d.iso })
+                              setSelectedSlotKey('')
+                            }}
+                            className={`flex-shrink-0 flex flex-col items-center justify-center w-16 py-2.5 px-1 rounded-2xl border transition-all cursor-pointer ${
+                              isDateSelected
+                                ? 'bg-gradient-to-b from-emerald-600 via-teal-600 to-cyan-700 border-emerald-300 text-white ring-2 ring-emerald-400 shadow-lg shadow-emerald-500/30 scale-105'
+                                : 'bg-slate-900/90 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-200'
+                            }`}
+                          >
+                            <span className={`text-[10px] font-extrabold uppercase ${isDateSelected ? 'text-emerald-200' : 'text-slate-500'}`}>
+                              {d.dayLabel}
+                            </span>
+                            <span className={`text-base font-black my-0.5 ${isDateSelected ? 'text-white' : 'text-slate-200'}`}>
+                              {d.dateNum}
+                            </span>
+                            <span className={`text-[9px] font-semibold ${isDateSelected ? 'text-emerald-100' : 'text-slate-500'}`}>
+                              {d.monthName}
+                            </span>
+                            {isDateSelected && (
+                              <span className="mt-1 w-2 h-2 rounded-full bg-white shadow-xs animate-pulse" />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="date"
+                          required
+                          min={minDateStr}
+                          max={maxDateStr}
+                          value={formData.appointment_date}
+                          onChange={(e) => {
+                            setFormData({ ...formData, appointment_date: e.target.value })
+                            setSelectedSlotKey('')
+                          }}
+                          className="w-full px-4 py-2.5 rounded-xl glass-input text-slate-100 focus:outline-none text-xs font-semibold bg-slate-900 border border-slate-700"
+                        />
+                      </div>
+                      <span className="text-[11px] text-slate-400 hidden sm:inline">
+                        (or choose custom date from 30-day calendar)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Real-time 30-Minute Consultation Time Slots & Conflict Locking */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-slate-300 font-bold uppercase tracking-wider text-xs">
+                        Select 30-Minute Consultation Slot *
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
+                          30 Mins / Slot
                         </span>
-                      )}
+                        {loadingSlots && (
+                          <span className="text-[10px] text-cyan-400 animate-pulse font-medium">
+                            Checking doctor schedule...
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {availableSlots.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 border border-slate-800/80 rounded-2xl bg-slate-950/50">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1.5 border border-slate-800 rounded-2xl bg-slate-950/60">
                         {availableSlots.map((slot) => {
                           const isSelected = selectedSlotKey === slot.start_time
                           if (slot.is_booked) {
                             return (
                               <div
                                 key={slot.start_time}
-                                className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-500/20 text-rose-300 flex flex-col items-center justify-center opacity-60 cursor-not-allowed select-none"
-                                title="This slot is already booked and locked for this doctor. Another patient cannot book this same timing."
+                                className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 flex flex-col items-center justify-center opacity-65 cursor-not-allowed select-none"
+                                title="This 30-minute slot is booked and locked. Another patient cannot book this same timing."
                               >
                                 <span className="text-[11px] font-mono font-bold line-through text-slate-400">
                                   {slot.start_time} - {slot.end_time}
                                 </span>
                                 <span className="text-[9px] font-extrabold text-rose-400 flex items-center mt-0.5">
-                                  🔒 Booked & Locked
+                                  🔒 Booked & Locked (30m)
                                 </span>
                               </div>
                             )
@@ -1265,7 +1406,7 @@ export default function AppointmentsPage() {
                                 key={slot.start_time}
                                 className="p-2.5 rounded-xl bg-slate-900/40 border border-slate-800 text-slate-500 flex flex-col items-center justify-center opacity-40 cursor-not-allowed select-none"
                               >
-                                <span className="text-[11px] font-mono font-bold">{slot.start_time}</span>
+                                <span className="text-[11px] font-mono font-bold">{slot.start_time} - {slot.end_time}</span>
                                 <span className="text-[9px] text-slate-500">Passed</span>
                               </div>
                             )
@@ -1285,15 +1426,15 @@ export default function AppointmentsPage() {
                               }}
                               className={`p-2.5 rounded-xl border text-center transition flex flex-col items-center justify-center cursor-pointer ${
                                 isSelected
-                                  ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/30 border-emerald-400 text-emerald-300 ring-2 ring-emerald-400 shadow-md shadow-emerald-500/20'
-                                  : 'bg-slate-900 border-slate-700/80 text-slate-200 hover:border-emerald-500/60 hover:bg-slate-800'
+                                  ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 border-emerald-300 text-white ring-2 ring-emerald-400 shadow-lg shadow-emerald-500/30'
+                                  : 'bg-slate-900 border-slate-700/80 text-slate-200 hover:border-emerald-500/60 hover:bg-slate-800/90'
                               }`}
                             >
                               <span className="text-xs font-mono font-extrabold">
                                 {slot.start_time} - {slot.end_time}
                               </span>
-                              <span className="text-[9px] font-bold text-emerald-400 mt-0.5">
-                                {isSelected ? '✓ Selected Slot' : 'Available'}
+                              <span className={`text-[9px] font-extrabold mt-0.5 ${isSelected ? 'text-emerald-100' : 'text-emerald-400'}`}>
+                                {isSelected ? '✓ Selected (30m)' : '✓ Available (30m)'}
                               </span>
                             </button>
                           )
@@ -1302,17 +1443,30 @@ export default function AppointmentsPage() {
                     ) : (
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1">Start Time</label>
+                          <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1">Start Time (30 Min Slot)</label>
                           <input
                             type="time"
                             required
                             value={formData.start_time}
-                            onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                            onChange={(e) => {
+                              const st = e.target.value
+                              let et = ''
+                              try {
+                                const [h, m] = st.split(':').map(Number)
+                                const totalMins = h * 60 + m + 30
+                                const endH = String(Math.floor(totalMins / 60) % 24).padStart(2, '0')
+                                const endM = String(totalMins % 60).padStart(2, '0')
+                                et = `${endH}:${endM}`
+                              } catch (err) {
+                                et = st
+                              }
+                              setFormData({ ...formData, start_time: st, end_time: et })
+                            }}
                             className="w-full px-3 py-2 rounded-xl glass-input text-slate-100 focus:outline-none text-xs font-mono font-bold bg-slate-900"
                           />
                         </div>
                         <div>
-                          <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1">End Time</label>
+                          <label className="block text-slate-400 text-[10px] uppercase font-bold mb-1">End Time (+30 Mins)</label>
                           <input
                             type="time"
                             required

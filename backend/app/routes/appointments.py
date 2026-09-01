@@ -125,9 +125,18 @@ def get_available_slots():
             if is_booked:
                 booked_count += 1
 
+            # Calculate end time (30 min interval)
+            try:
+                start_dt = datetime.strptime(t_str, "%H:%M")
+                end_t_str = (start_dt + timedelta(minutes=30)).strftime("%H:%M")
+            except Exception:
+                end_t_str = t_str
+
             booking_info = booked_map.get((cur_date_str, t_str))
             slots.append({
                 "time": t_str,
+                "start_time": t_str,
+                "end_time": end_t_str,
                 "is_available": is_available,
                 "is_booked": is_booked,
                 "is_past": is_past,
@@ -234,7 +243,14 @@ def create_appointment():
         doctor_id = int(doctor_id)
         appt_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         start_t = datetime.strptime(start_time_str, "%H:%M").time()
-        end_t = datetime.strptime(end_time_str, "%H:%M").time() if end_time_str else time(start_t.hour, (start_t.minute + 30) % 60)
+        start_dt = datetime.combine(appt_date, start_t)
+        if end_time_str:
+            try:
+                end_t = datetime.strptime(end_time_str, "%H:%M").time()
+            except Exception:
+                end_t = (start_dt + timedelta(minutes=30)).time()
+        else:
+            end_t = (start_dt + timedelta(minutes=30)).time()
     except Exception:
         return error_response("Invalid date or time format. Use YYYY-MM-DD and HH:MM", "INVALID_FORMAT", 400)
 

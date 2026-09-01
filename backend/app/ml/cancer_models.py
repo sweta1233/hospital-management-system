@@ -413,6 +413,7 @@ class EnsembleCancerPredictor:
                 "unit": feat["unit"],
                 "normal_range": feat["normal_range"],
                 "is_elevated": is_elevated,
+                "status": "Elevated / High" if is_elevated else "Normal Reference",
                 "desc": feat["desc"]
             })
 

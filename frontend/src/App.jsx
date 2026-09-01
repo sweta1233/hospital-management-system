@@ -51,11 +51,18 @@ function Layout({ children }) {
   const primaryRole = user?.primary_role || getUserRoles(user)[0] || 'User'
 
   return (
-    <div className="flex h-screen bg-[#0b132b]">
+    <div className="flex h-screen bg-[#060b19] relative overflow-hidden">
+      {/* AI Futuristic Hospital Ambient Background Glows & Cyber Grid */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/3 -right-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+      </div>
+
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden lg:pl-64">
+      <div className="flex-1 flex flex-col overflow-hidden lg:pl-64 relative z-10">
         {/* Header */}
         <header className="h-16 glass-panel border-b border-slate-800/60 flex items-center justify-between px-6 z-10 backdrop-blur-xl">
           <button
