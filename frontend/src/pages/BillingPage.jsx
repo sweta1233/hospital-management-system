@@ -254,7 +254,7 @@ export default function BillingPage() {
   )
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-gradient-to-br from-[#0b132b] via-[#0f172a] to-[#0b132b] text-slate-100">
+    <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-transparent text-slate-100">
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

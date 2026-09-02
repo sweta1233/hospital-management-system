@@ -400,15 +400,15 @@ export default function CancerPredictionPage() {
 
           {/* Model Accuracy Benchmark Cards */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-[#060b1b]/90 border border-emerald-500/30 rounded-2xl p-3.5 text-center shadow-lg">
+            <div className="bg-[#080c14]/90 border border-emerald-500/30 rounded-2xl p-3.5 text-center shadow-lg">
               <span className="text-[10px] uppercase font-extrabold text-slate-400 block">Model Accuracy</span>
               <span className="text-xl font-black text-emerald-400">99.2%</span>
             </div>
-            <div className="bg-[#060b1b]/90 border border-cyan-500/30 rounded-2xl p-3.5 text-center shadow-lg">
+            <div className="bg-[#080c14]/90 border border-cyan-500/30 rounded-2xl p-3.5 text-center shadow-lg">
               <span className="text-[10px] uppercase font-extrabold text-slate-400 block">AUC-ROC</span>
               <span className="text-xl font-black text-cyan-400">0.998</span>
             </div>
-            <div className="bg-[#060b1b]/90 border border-purple-500/30 rounded-2xl p-3.5 text-center shadow-lg">
+            <div className="bg-[#080c14]/90 border border-purple-500/30 rounded-2xl p-3.5 text-center shadow-lg">
               <span className="text-[10px] uppercase font-extrabold text-slate-400 block">Sensitivity</span>
               <span className="text-xl font-black text-purple-400">99.1%</span>
             </div>
@@ -444,7 +444,7 @@ export default function CancerPredictionPage() {
             className="space-y-8"
           >
             {/* Top Navigation & Action Strip */}
-            <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#080e22]/90 border border-slate-800">
+            <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#0a0e1a]/90 border border-slate-800">
               <button
                 type="button"
                 onClick={() => setPredictionResult(null)}
@@ -526,7 +526,7 @@ export default function CancerPredictionPage() {
                 </div>
 
                 {/* Category-Specific Cancer Avoidance & Longevity Guidelines */}
-                <div className="bg-[#080e22] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div className="bg-[#0a0e1a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
                     <div>
                       <h3 className="text-lg font-black text-white flex items-center">
@@ -570,7 +570,7 @@ export default function CancerPredictionPage() {
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="p-5 rounded-2xl bg-[#080e22] border border-emerald-500/30 hover:border-emerald-500/60 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
+                    className="p-5 rounded-2xl bg-[#0a0e1a] border border-emerald-500/30 hover:border-emerald-500/60 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
                       <Download className="w-6 h-6" />
@@ -584,7 +584,7 @@ export default function CancerPredictionPage() {
                   <button
                     type="button"
                     onClick={() => navigate('/arogya-ai')}
-                    className="p-5 rounded-2xl bg-[#080e22] border border-indigo-500/30 hover:border-indigo-500/60 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
+                    className="p-5 rounded-2xl bg-[#0a0e1a] border border-indigo-500/30 hover:border-indigo-500/60 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
                       <Sparkles className="w-6 h-6" />
@@ -598,7 +598,7 @@ export default function CancerPredictionPage() {
                   <button
                     type="button"
                     onClick={() => setPredictionResult(null)}
-                    className="p-5 rounded-2xl bg-[#080e22] border border-cyan-500/30 hover:border-cyan-500/60 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
+                    className="p-5 rounded-2xl bg-[#0a0e1a] border border-cyan-500/30 hover:border-cyan-500/60 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
                       <RefreshCw className="w-6 h-6" />
@@ -674,7 +674,7 @@ export default function CancerPredictionPage() {
                 </div>
 
                 {/* 5-Step Comprehensive Curative Pathway ("What Patient Should Do To Cure") */}
-                <div className="bg-[#080e22] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div className="bg-[#0a0e1a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
                     <div>
                       <h3 className="text-lg font-black text-white flex items-center">
@@ -750,7 +750,7 @@ export default function CancerPredictionPage() {
                 </div>
 
                 {/* Biomarker Deviation Breakdown Table */}
-                <div className="bg-[#080e22] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
+                <div className="bg-[#0a0e1a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
                   <h3 className="text-base font-bold text-white flex items-center">
                     <Activity className="w-5 h-5 text-rose-400 mr-2" />
                     Biomarker Risk Parameter Analysis
@@ -810,7 +810,7 @@ export default function CancerPredictionPage() {
                   <button
                     type="button"
                     onClick={() => navigate('/arogya-ai')}
-                    className="p-5 rounded-2xl bg-[#080e22] border border-indigo-500/30 hover:border-indigo-500/60 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
+                    className="p-5 rounded-2xl bg-[#0a0e1a] border border-indigo-500/30 hover:border-indigo-500/60 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
                       <Sparkles className="w-6 h-6" />
@@ -824,7 +824,7 @@ export default function CancerPredictionPage() {
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="p-5 rounded-2xl bg-[#080e22] border border-slate-700 hover:border-slate-600 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
+                    className="p-5 rounded-2xl bg-[#0a0e1a] border border-slate-700 hover:border-slate-600 text-left transition shadow-lg flex items-center space-x-4 cursor-pointer"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center flex-shrink-0">
                       <Printer className="w-6 h-6" />
@@ -852,7 +852,7 @@ export default function CancerPredictionPage() {
             {/* Cancer Category Selector & Lab Upload Bar */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Cancer Dropdown & Model Info */}
-              <div className="lg:col-span-2 bg-[#080e22] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+              <div className="lg:col-span-2 bg-[#0a0e1a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2.5">
                   Select Cancer Diagnostic Category:
                 </label>
@@ -905,7 +905,7 @@ export default function CancerPredictionPage() {
               </div>
 
               {/* Lab Report Automated Document Parser */}
-              <div className="bg-[#080e22] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between">
+              <div className="bg-[#0a0e1a] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-bold text-white flex items-center">
@@ -943,7 +943,7 @@ export default function CancerPredictionPage() {
             </div>
 
             {/* Biomarkers Input Form Panel */}
-            <div className="bg-[#080e22] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+            <div className="bg-[#0a0e1a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center">

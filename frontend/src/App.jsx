@@ -8,6 +8,7 @@ import { getUserRoles, hasAnyRole } from './utils/auth'
 import Sidebar from './components/Sidebar'
 import NotificationModal from './components/NotificationModal'
 import IncomingCallModal from './components/IncomingCallModal'
+import AppBackdrop from './components/AppBackdrop'
 
 // Public Auth & Landing Pages
 import LandingPage from './pages/LandingPage'
@@ -51,20 +52,15 @@ function Layout({ children }) {
   const primaryRole = user?.primary_role || getUserRoles(user)[0] || 'User'
 
   return (
-    <div className="flex h-screen bg-[#060b19] relative overflow-hidden">
-      {/* AI Futuristic Hospital Ambient Background Glows & Cyber Grid */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/3 -right-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-      </div>
+    <div className="flex h-screen bg-[#080c14] relative overflow-hidden">
+      <AppBackdrop opacity="opacity-10" showSwitcher={false} />
 
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden lg:pl-64 relative z-10">
         {/* Header */}
-        <header className="h-16 glass-panel border-b border-slate-800/60 flex items-center justify-between px-6 z-10 backdrop-blur-xl">
+        <header className="h-16 glass-panel border-b border-slate-800/60 flex items-center justify-between px-6 z-10 backdrop-blur-xl bg-slate-950/70">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-slate-400 hover:text-cyan-400 transition"
@@ -104,7 +100,7 @@ function Layout({ children }) {
         </header>
 
         {/* Page Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#0b132b]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#080c14]/80 backdrop-blur-sm">
           {children}
         </main>
       </div>

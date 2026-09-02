@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -6,14 +6,16 @@ import {
   HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, Phone,
   CheckCircle2, Shield, AlertCircle, ArrowLeft, UserRound,
   KeyRound, RefreshCw, Smartphone, Sparkles, Video, FileText,
-  Activity, Award, ShieldCheck, Zap
+  Activity, Award, ShieldCheck, Zap, Stethoscope, ChevronRight
 } from 'lucide-react'
 import { loginSuccess } from '../store/slices/authSlice'
 import api from '../services/api'
 import { initSocket } from '../services/socket'
+import DiscreteOtpInput from '../components/DiscreteOtpInput'
+import AppBackdrop from '../components/AppBackdrop'
 
 export default function PatientLoginPage() {
-  const [authMode, setAuthMode] = useState('otp') // Default to quick OTP for real patients
+  const [authMode, setAuthMode] = useState('otp') // Default to quick OTP
   const [emailOrPhone, setEmailOrPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -22,6 +24,8 @@ export default function PatientLoginPage() {
   const [otpSent, setOtpSent] = useState(false)
   const [otpCode, setOtpCode] = useState('')
   const [otpLoading, setOtpLoading] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [dispatchInfo, setDispatchInfo] = useState(null)
 
   const [error, setError] = useState('')
   const [infoMsg, setInfoMsg] = useState('')
@@ -29,16 +33,27 @@ export default function PatientLoginPage() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
+  // Resend Countdown Timer
+  useEffect(() => {
+    let timer
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1)
+      }, 1000)
+    }
+    return () => clearInterval(timer)
+  }, [countdown])
+
   // Standard password login
   const handlePasswordLogin = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     setLoading(true)
     setError('')
     setInfoMsg('')
 
     try {
       const res = await api.post('/auth/patient/login', {
-        email: emailOrPhone,
+        email: emailOrPhone.trim(),
         password
       })
 
@@ -58,21 +73,26 @@ export default function PatientLoginPage() {
   // Request OTP
   const handleSendOtp = async (e) => {
     e?.preventDefault()
-    if (!emailOrPhone.trim()) {
-      setError('Please enter your email address or mobile phone number.')
+    const cleanIdentifier = emailOrPhone.trim()
+    if (!cleanIdentifier) {
+      setError('Please enter your email address or 10-digit mobile number.')
       return
     }
 
     setOtpLoading(true)
     setError('')
     setInfoMsg('')
+    setOtpCode('')
 
     try {
       const res = await api.post('/auth/send-otp', {
-        identifier: emailOrPhone.trim(),
+        identifier: cleanIdentifier,
         portal: 'patient',
       })
       setOtpSent(true)
+      setCountdown(30)
+      const data = res.data?.data || {}
+      setDispatchInfo(data.dispatch_info || null)
       setInfoMsg(res.data?.message || 'A 6-digit verification code has been dispatched!')
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send OTP. Please check your email or phone number.')
@@ -82,9 +102,9 @@ export default function PatientLoginPage() {
   }
 
   // Verify OTP and Login
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault()
-    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+  const handleVerifyOtp = async (codeToVerify) => {
+    const code = codeToVerify || otpCode
+    if (!code || code.trim().length !== 6) {
       setError('Please enter the complete 6-digit verification code.')
       return
     }
@@ -95,7 +115,7 @@ export default function PatientLoginPage() {
     try {
       const res = await api.post('/auth/verify-otp', {
         identifier: emailOrPhone.trim(),
-        otp_code: otpCode.trim(),
+        otp_code: code.trim(),
         portal: 'patient',
       })
 
@@ -111,60 +131,77 @@ export default function PatientLoginPage() {
     }
   }
 
+  // Masked identifier for privacy
+  const getMaskedTarget = () => {
+    const raw = emailOrPhone.trim()
+    if (!raw) return ''
+    if (raw.includes('@')) {
+      const [user, domain] = raw.split('@')
+      const maskedUser = user.length > 2 ? user[0] + '••••' + user.slice(-1) : user + '•••'
+      return `${maskedUser}@${domain}`
+    }
+    const digits = raw.replace(/\D/g, '')
+    if (digits.length >= 10) {
+      return `+91 ${digits.slice(-10, -8)}••••••${digits.slice(-2)}`
+    }
+    return raw
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#060c1d] via-[#0b142c] to-[#081028] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-10 relative overflow-hidden">
-      {/* Multi-Color Ambient Glow Spheres */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-cyan-500/20 blur-[140px] pointer-events-none animate-pulse" style={{ animationDuration: '6s' }} />
-      <div className="absolute top-1/2 -right-32 w-[450px] h-[450px] rounded-full bg-purple-600/20 blur-[160px] pointer-events-none animate-pulse" style={{ animationDuration: '8s' }} />
-      <div className="absolute -bottom-32 left-1/3 w-[400px] h-[400px] rounded-full bg-emerald-500/15 blur-[150px] pointer-events-none animate-pulse" style={{ animationDuration: '7s' }} />
-      <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-35 pointer-events-none" />
+    <div className="min-h-screen text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-10 relative overflow-hidden bg-[#080c14] selection:bg-cyan-500 selection:text-white">
+      {/* ── 5 AI Background Visuals Ambient Backdrop with Low Opacity ── */}
+      <AppBackdrop opacity="opacity-15" showSwitcher={false} />
 
       {/* Main Dual-Panel Container */}
       <div className="max-w-5xl w-full mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        {/* Left Side: Colorful Clinical Highlights (5 Cols) */}
-        <div className="lg:col-span-5 hidden lg:flex flex-col justify-between space-y-6 p-8 rounded-3xl bg-gradient-to-br from-slate-900/90 via-[#0d1b3e]/90 to-slate-950/90 border border-cyan-500/30 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+        {/* Left Side: Futuristic AI Clinical Highlights (5 Cols) */}
+        <div className="lg:col-span-5 hidden lg:flex flex-col justify-between space-y-6 p-8 rounded-3xl bg-slate-900/90 border border-cyan-500/30 shadow-2xl backdrop-blur-2xl relative overflow-hidden">
+          {/* Subtle Ambient Scanline */}
+          <div className="absolute inset-0 ai-scanline opacity-20 pointer-events-none" />
+
           {/* Top Back & Brand */}
-          <div>
+          <div className="relative z-10">
             <button
               onClick={() => navigate('/')}
-              className="inline-flex items-center space-x-2 text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition cursor-pointer mb-6"
+              className="inline-flex items-center space-x-2 text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition cursor-pointer mb-6 group"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               <span>Back to Hospital Home</span>
             </button>
 
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30">
-                <HeartPulse className="w-7 h-7" />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 pulse-ring-emerald">
+                <HeartPulse className="w-7 h-7 animate-pulse" />
               </div>
               <div>
                 <h1 className="text-xl font-extrabold text-white tracking-tight">
                   Arogya<span className="gradient-text ml-1">HMS</span>
                 </h1>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">
-                  Patient Health Portal
+                <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> AI Patient Health Portal
                 </p>
               </div>
             </div>
 
             <h2 className="text-2xl font-extrabold text-white leading-snug">
-              Instant Access to Your <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">Health Records</span>
+              Instant Access to Your <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">Medical Records</span>
             </h2>
             <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-              Login to view your medical consultations, download laboratory diagnostic reports, view digital prescriptions, and connect with your doctors in HD video.
+              Login to access doctor consultations, pathology reports, digital e-prescriptions, and 2-way video telehealth with instant OTP.
             </p>
           </div>
 
           {/* Feature Badges Grid */}
-          <div className="space-y-3">
+          <div className="space-y-3 relative z-10">
             {[
-              { icon: Video, color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30', title: 'Live Doctor Telehealth', sub: 'Instant Video Checkup' },
-              { icon: FileText, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', title: 'Diagnostic Lab Reports', sub: 'Pathology & Analyte Results' },
-              { icon: ShieldCheck, color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', title: 'Encrypted Health Passport', sub: '100% Confidential & Secure' },
+              { icon: Smartphone, color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30', title: '1-Click Fast OTP Login', sub: 'Real SMS & Email Verification' },
+              { icon: Video, color: 'bg-teal-500/20 text-teal-300 border-teal-500/30', title: 'Live Doctor Telehealth', sub: 'Instant Video Consultations' },
+              { icon: FileText, color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', title: 'Diagnostic Lab Reports', sub: 'Instant Analyte Analysis & Rx' },
+              { icon: ShieldCheck, color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', title: '256-Bit Encrypted Records', sub: 'HIPAA & NABH Compliant' },
             ].map((f, i) => {
               const Icon = f.icon
               return (
-                <div key={i} className="flex items-center space-x-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md">
+                <div key={i} className="flex items-center space-x-3 p-3 rounded-2xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-md hover:border-cyan-500/40 transition-colors">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${f.color}`}>
                     <Icon className="w-5 h-5" />
                   </div>
@@ -178,18 +215,21 @@ export default function PatientLoginPage() {
           </div>
 
           {/* Trust Banner */}
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 relative z-10">
             <span className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
               <Shield className="w-3.5 h-3.5" />
-              <span>HIPAA Compliant Security</span>
+              <span>100% Patient Privacy Guaranteed</span>
             </span>
             <span className="font-mono text-cyan-400">24/7 Available</span>
           </div>
         </div>
 
-        {/* Right Side: Multi-Colored Interactive Login Form Card (7 Cols) */}
+        {/* Right Side: Interactive 6-Digit OTP / Password Login Card (7 Cols) */}
         <div className="lg:col-span-7">
-          <div className="glass-panel rounded-3xl p-6 sm:p-8 lg:p-9 border border-cyan-500/40 shadow-2xl shadow-cyan-950/60 backdrop-blur-2xl relative overflow-hidden bg-gradient-to-b from-slate-900/95 via-[#0c1630]/95 to-slate-950/95">
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 lg:p-9 border border-cyan-500/40 shadow-2xl backdrop-blur-2xl relative overflow-hidden bg-slate-900/95">
+            {/* Ambient Corner Glow */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
             {/* Mobile Header (Shown on small screens) */}
             <div className="lg:hidden mb-6 flex items-center justify-between">
               <button
@@ -200,7 +240,7 @@ export default function PatientLoginPage() {
                 <span>Home</span>
               </button>
               <div className="flex items-center space-x-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-teal-500 flex items-center justify-center text-white font-bold text-xs">
                   A
                 </div>
                 <span className="text-sm font-bold text-white">Arogya HMS</span>
@@ -214,14 +254,14 @@ export default function PatientLoginPage() {
                 <span>Patient Portal Sign In</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Welcome to <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400 bg-clip-text text-transparent">Your Health Portal</span>
+                Welcome to <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">Arogya Portal</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Enter your registered email address or mobile number to proceed.
+                Enter your mobile phone number or email address for instant 6-digit OTP verification.
               </p>
             </div>
 
-            {/* Multi-Color Mode Switcher Tabs */}
+            {/* Mode Switcher Tabs */}
             <div className="flex rounded-2xl bg-slate-950/90 p-1.5 border border-slate-800 mb-6">
               <button
                 type="button"
@@ -232,12 +272,12 @@ export default function PatientLoginPage() {
                 }}
                 className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
                   authMode === 'otp'
-                    ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white shadow-lg shadow-cyan-500/25'
+                    ? 'bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 text-white shadow-lg shadow-cyan-500/25'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <Smartphone className="w-4 h-4" />
-                <span>One-Time Passcode (OTP)</span>
+                <span>Quick 6-Digit OTP</span>
               </button>
 
               <button
@@ -262,187 +302,223 @@ export default function PatientLoginPage() {
             <AnimatePresence>
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mb-5 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center space-x-2.5 shadow-md"
+                  exit={{ opacity: 0, y: -8 }}
+                  className="mb-5 p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex items-start space-x-2.5 text-rose-300 text-xs shadow-lg"
                 >
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                  <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Success Info Message */}
+            {/* Info / Success Notification */}
             <AnimatePresence>
               {infoMsg && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mb-5 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2.5 shadow-md"
+                  exit={{ opacity: 0, y: -8 }}
+                  className="mb-5 p-3.5 rounded-2xl bg-emerald-950/80 border border-emerald-500/50 flex items-start space-x-2.5 text-emerald-300 text-xs shadow-lg"
                 >
-                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-                  <span>{infoMsg}</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">{infoMsg}</p>
+                    {dispatchInfo?.dev_mode && dispatchInfo?.otp_code && (
+                      <p className="mt-1 font-mono text-[11px] bg-slate-900/90 p-1.5 rounded-lg border border-emerald-500/30 text-emerald-200">
+                        🧪 Sandbox Testing Code: <strong className="text-white text-sm tracking-wider">{dispatchInfo.otp_code}</strong>
+                      </p>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Fast OTP Login Form */}
+            {/* MODE 1: 6-DIGIT OTP AUTHENTICATION */}
             {authMode === 'otp' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Your Registered Email or Mobile Number *
-                  </label>
-                  <div className="flex space-x-2">
-                    <div className="relative flex-1">
-                      <Mail className="w-4 h-4 text-cyan-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        required
-                        value={emailOrPhone}
-                        onChange={(e) => {
-                          setEmailOrPhone(e.target.value)
-                          setOtpSent(false)
-                        }}
-                        placeholder="e.g. your_email@gmail.com or 9876543210"
-                        className="w-full pl-10 pr-3 py-3 rounded-2xl glass-input text-sm text-slate-100 placeholder-slate-500 focus:outline-none border border-slate-700 focus:border-cyan-400 font-medium"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={otpLoading || !emailOrPhone.trim()}
-                      className="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-white font-bold text-xs transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center space-x-1.5 cursor-pointer shadow-lg shadow-cyan-500/25"
-                    >
-                      {otpLoading ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <span>{otpSent ? 'Resend Code' : 'Send Code'}</span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {otpSent && (
-                  <motion.form
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onSubmit={handleVerifyOtp}
-                    className="space-y-4 pt-2"
-                  >
+              <div>
+                {!otpSent ? (
+                  // Step 1: Input Identifier
+                  <form onSubmit={handleSendOtp} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Enter 6-Digit Passcode *
+                      <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Mobile Phone or Email Address
                       </label>
                       <div className="relative">
-                        <KeyRound className="w-4 h-4 text-cyan-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-cyan-400">
+                          <Phone className="w-4 h-4" />
+                        </div>
                         <input
                           type="text"
-                          maxLength={6}
+                          value={emailOrPhone}
+                          onChange={(e) => setEmailOrPhone(e.target.value)}
+                          placeholder="e.g. 9876543210 or user@email.com"
+                          className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950/80 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 transition"
                           required
                           autoFocus
-                          value={otpCode}
-                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                          placeholder="&bull; &bull; &bull; &bull; &bull; &bull;"
-                          className="w-full pl-10 pr-4 py-3.5 rounded-2xl glass-input text-lg font-mono font-bold tracking-[8px] text-center text-cyan-300 placeholder-slate-600 focus:outline-none border-2 border-cyan-500/50 focus:border-cyan-400 bg-slate-950"
                         />
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1.5 text-center">
-                        Code valid for 10 minutes. Check your inbox or phone SMS.
+                      <p className="text-[11px] text-slate-400 mt-1.5 flex items-center space-x-1">
+                        <span>We'll dispatch a real 6-digit numeric verification code to your device.</span>
                       </p>
                     </div>
 
                     <button
                       type="submit"
-                      disabled={loading || otpCode.length !== 6}
-                      className="w-full py-3.5 px-4 rounded-2xl gradient-btn text-white font-bold text-sm tracking-wide shadow-xl shadow-cyan-500/30 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      disabled={otpLoading}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-extrabold text-sm shadow-xl shadow-cyan-500/25 flex items-center justify-center space-x-2 transition transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
                     >
-                      {loading ? (
+                      {otpLoading ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Verifying Passcode...</span>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Dispatching 6-Digit Code...</span>
                         </>
                       ) : (
                         <>
-                          <span>Verify & Sign In</span>
+                          <span>Send 6-Digit Verification Code</span>
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}
                     </button>
-                  </motion.form>
+                  </form>
+                ) : (
+                  // Step 2: 6-Box Discrete OTP Entry
+                  <div className="space-y-5">
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-cyan-500/30 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                          Verification Code Sent To:
+                        </span>
+                        <span className="text-sm font-mono font-bold text-cyan-300">
+                          {getMaskedTarget()}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOtpSent(false)
+                          setOtpCode('')
+                          setError('')
+                          setInfoMsg('')
+                        }}
+                        className="text-xs text-cyan-400 hover:text-cyan-300 underline font-semibold cursor-pointer"
+                      >
+                        Change
+                      </button>
+                    </div>
+
+                    {/* Flipkart / Amazon Style 6-Box Discrete Input */}
+                    <div>
+                      <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-2 text-center">
+                        Enter 6-Digit Code
+                      </label>
+                      <DiscreteOtpInput
+                        value={otpCode}
+                        onChange={(code) => setOtpCode(code)}
+                        onComplete={(code) => handleVerifyOtp(code)}
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleVerifyOtp(otpCode)}
+                      disabled={loading || otpCode.length !== 6}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-white font-extrabold text-sm shadow-xl shadow-emerald-500/25 flex items-center justify-center space-x-2 transition transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
+                    >
+                      {loading ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Verifying & Logging In...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Verify & Enter Patient Portal</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Resend Section */}
+                    <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+                      <span>Didn't receive the code?</span>
+                      <button
+                        type="button"
+                        disabled={countdown > 0 || otpLoading}
+                        onClick={handleSendOtp}
+                        className="font-bold text-cyan-400 hover:text-cyan-300 disabled:text-slate-600 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-1"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${otpLoading ? 'animate-spin' : ''}`} />
+                        <span>{countdown > 0 ? `Resend in ${countdown}s` : 'Resend OTP'}</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Password Login Form */}
+            {/* MODE 2: STANDARD EMAIL / PASSWORD LOGIN */}
             {authMode === 'password' && (
               <form onSubmit={handlePasswordLogin} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Email Address or Phone Number
+                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Email Address or Phone
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-indigo-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Mail className="w-4 h-4" />
+                    </div>
                     <input
                       type="text"
-                      required
                       value={emailOrPhone}
                       onChange={(e) => setEmailOrPhone(e.target.value)}
-                      placeholder="patient@email.com or +1234567890"
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl glass-input text-sm text-slate-100 placeholder-slate-500 focus:outline-none border border-slate-700 focus:border-indigo-400"
+                      placeholder="patient@example.com"
+                      className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950/80 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition"
+                      required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
                     Password
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-indigo-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Lock className="w-4 h-4" />
+                    </div>
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      className="w-full pl-10 pr-11 py-3 rounded-2xl glass-input text-sm text-slate-100 placeholder-slate-500 focus:outline-none border border-slate-700 focus:border-indigo-400"
+                      placeholder="••••••••••••"
+                      className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-950/80 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition"
+                      required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <label className="flex items-center text-slate-400 hover:text-slate-300 cursor-pointer">
-                    <input type="checkbox" defaultChecked className="rounded border-slate-700 bg-slate-800 text-indigo-500 mr-2 focus:ring-0" />
-                    Remember me
-                  </label>
-                  <Link to="/forgot-password" className="text-indigo-400 hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
-
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-sm tracking-wide shadow-xl shadow-indigo-500/30 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white font-extrabold text-sm shadow-xl shadow-indigo-500/25 flex items-center justify-center space-x-2 transition transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
                 >
                   {loading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Signing in...</span>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Authenticating...</span>
                     </>
                   ) : (
                     <>
-                      <span>Sign In to Portal</span>
+                      <span>Sign In to Dashboard</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -450,17 +526,27 @@ export default function PatientLoginPage() {
               </form>
             )}
 
-            {/* Bottom Links */}
-            <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs gap-3">
-              <span className="text-slate-400">
-                New patient?{' '}
-                <Link to="/patient/register" className="text-cyan-400 font-bold hover:underline">
-                  Register Account
+            {/* Bottom Actions & Register Navigation */}
+            <div className="mt-6 pt-6 border-t border-slate-800 text-center space-y-3">
+              <p className="text-xs text-slate-400">
+                New patient at Arogya Hospital?{' '}
+                <Link
+                  to="/patient/register"
+                  className="font-bold text-cyan-400 hover:text-cyan-300 underline"
+                >
+                  Create Patient Account
                 </Link>
-              </span>
-              <Link to="/staff/login" className="text-slate-400 hover:text-slate-200 transition font-medium">
-                Hospital Staff Login &rarr;
-              </Link>
+              </p>
+
+              <div className="flex items-center justify-center space-x-4 text-[11px] text-slate-500">
+                <Link to="/staff/login" className="hover:text-purple-400 transition">
+                  Hospital Staff Login &rarr;
+                </Link>
+                <span>&bull;</span>
+                <Link to="/cancer-detection" className="hover:text-emerald-400 transition">
+                  Cancer AI Diagnostics &rarr;
+                </Link>
+              </div>
             </div>
           </div>
         </div>

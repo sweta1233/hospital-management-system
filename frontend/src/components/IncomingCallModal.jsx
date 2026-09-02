@@ -430,13 +430,13 @@ export default function IncomingCallModal() {
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }}
-              className="bg-[#0b132b] border-2 border-cyan-500/60 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl shadow-cyan-500/20 text-center relative overflow-hidden"
+              className="bg-[#0a0e1a] border-2 border-cyan-500/60 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl shadow-cyan-500/20 text-center relative overflow-hidden"
             >
               {/* Pulsing ring background */}
               <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
               <div className="w-24 h-24 mx-auto mb-5 rounded-full bg-gradient-to-tr from-cyan-500 to-emerald-500 p-1 flex items-center justify-center relative">
                 <span className="absolute inset-0 rounded-full border-2 border-cyan-400 animate-ping opacity-75" />
-                <div className="w-full h-full rounded-full bg-[#080e22] flex items-center justify-center text-cyan-300">
+                <div className="w-full h-full rounded-full bg-[#080c14] flex items-center justify-center text-cyan-300">
                   {incomingCall.caller_role === 'doctor' ? (
                     <Stethoscope className="w-10 h-10" />
                   ) : (
@@ -492,10 +492,10 @@ export default function IncomingCallModal() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-5xl h-[90vh] bg-[#080e22] border border-slate-700/80 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative"
+              className="w-full max-w-5xl h-[90vh] bg-[#0a0e1a] border border-slate-700/80 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative"
             >
               {/* Call Header */}
-              <div className="h-16 px-6 bg-[#060b1b] border-b border-slate-800 flex items-center justify-between z-10">
+              <div className="h-16 px-6 bg-[#080c14] border-b border-slate-800 flex items-center justify-between z-10">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
                   <div>
@@ -577,7 +577,7 @@ export default function IncomingCallModal() {
                       initial={{ x: 320 }}
                       animate={{ x: 0 }}
                       exit={{ x: 320 }}
-                      className="absolute right-0 top-0 bottom-0 w-80 bg-[#080e22]/95 border-l border-slate-700 p-5 flex flex-col z-30 backdrop-blur-xl"
+                      className="absolute right-0 top-0 bottom-0 w-80 bg-[#0a0e1a]/95 border-l border-slate-700 p-5 flex flex-col z-30 backdrop-blur-xl"
                     >
                       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                         <h4 className="text-sm font-bold text-white flex items-center">
@@ -616,7 +616,7 @@ export default function IncomingCallModal() {
               </div>
 
               {/* Call Controls Bar */}
-              <div className="h-20 bg-[#060b1b] border-t border-slate-800 flex items-center justify-center space-x-4 px-6 z-10">
+              <div className="h-20 bg-[#080c14] border-t border-slate-800 flex items-center justify-center space-x-4 px-6 z-10">
                 <button
                   onClick={toggleMute}
                   className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${

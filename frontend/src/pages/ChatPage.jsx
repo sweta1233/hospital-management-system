@@ -200,7 +200,7 @@ export default function ChatPage() {
   })
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col bg-gradient-to-br from-[#0b132b] via-[#0f172a] to-[#0b132b] text-slate-100 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
+    <div className="h-[calc(100vh-6rem)] flex flex-col bg-slate-900/60 backdrop-blur-xl text-slate-100 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
       {/* Top Header */}
       <div className="px-6 py-4 border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center space-x-3">

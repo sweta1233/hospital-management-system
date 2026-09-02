@@ -665,32 +665,45 @@ def change_password():
 
 
 def find_user_by_identifier(identifier: str):
-    """Find user by email or flexible phone lookup."""
+    """Find user by email or flexible phone lookup with full international/Indian formatting."""
+    from app.services.notification_service import normalize_phone_number
     clean_id = identifier.strip()
     if not clean_id:
         return None, "email"
     if "@" in clean_id:
         return User.query.filter_by(email=clean_id.lower()).first(), "email"
 
-    # Exact phone search
-    user = User.query.filter_by(phone=clean_id).first()
-    if not user:
-        patient = Patient.query.filter_by(phone=clean_id).first()
-        if patient and patient.user_id:
-            user = User.query.get(patient.user_id)
+    norm = normalize_phone_number(clean_id)
 
-    # Partial digit matching (e.g. ignoring +91 or dashes)
-    if not user:
-        digits = re.sub(r"\D", "", clean_id)
-        if len(digits) >= 6:
-            search_digits = digits[-10:] if len(digits) >= 10 else digits
-            user = User.query.filter(User.phone.ilike(f"%{search_digits}%")).first()
-            if not user:
-                pat = Patient.query.filter(Patient.phone.ilike(f"%{search_digits}%")).first()
-                if pat and pat.user_id:
-                    user = User.query.get(pat.user_id)
+    # 1. Exact phone search
+    candidates = [clean_id, norm["raw"], norm["e164"], norm["digits"]]
+    if norm["local_10"]:
+        candidates.append(norm["local_10"])
 
-    return user, "phone"
+    for cand in candidates:
+        if cand:
+            user = User.query.filter_by(phone=cand).first()
+            if user:
+                return user, "phone"
+            patient = Patient.query.filter_by(phone=cand).first()
+            if patient and patient.user_id:
+                user = User.query.get(patient.user_id)
+                if user:
+                    return user, "phone"
+
+    # 2. Partial 10-digit matching
+    search_digits = norm["local_10"] or (norm["digits"][-10:] if len(norm["digits"]) >= 10 else norm["digits"])
+    if search_digits and len(search_digits) >= 6:
+        user = User.query.filter(User.phone.ilike(f"%{search_digits}%")).first()
+        if user:
+            return user, "phone"
+        pat = Patient.query.filter(Patient.phone.ilike(f"%{search_digits}%")).first()
+        if pat and pat.user_id:
+            user = User.query.get(pat.user_id)
+            if user:
+                return user, "phone"
+
+    return None, "phone"
 
 
 @auth_bp.route("/send-otp", methods=["POST"])
@@ -815,18 +828,26 @@ def send_otp():
     print(f"==================================================")
 
     # Return response
-    return success_response(
-        data={
-            "identifier": identifier,
+    resp_data = {
+        "identifier": identifier,
+        "channel": channel,
+        "dispatch_info": {
+            "delivered": dispatch_res.get("delivered", False),
+            "provider": dispatch_res.get("provider", channel),
+            "method": dispatch_res.get("method", channel),
             "channel": channel,
-            "dispatch_info": {
-                "delivered": dispatch_res.get("delivered", False),
-                "method": dispatch_res.get("method", channel),
-                "simulated": dispatch_res.get("simulated", False),
-                "note": dispatch_res.get("note", None),
-            },
-            "expires_in_seconds": 600,
+            "target": dispatch_res.get("target", identifier),
+            "simulated": dispatch_res.get("simulated", False),
+            "note": dispatch_res.get("note", None),
         },
+        "expires_in_seconds": 600,
+    }
+    # If simulated in development, provide the sandbox preview code
+    if dispatch_res.get("simulated", False):
+        resp_data["dev_otp"] = code
+
+    return success_response(
+        data=resp_data,
         message=f"A 6-digit verification code has been sent to your {channel} ({identifier})."
     )
 
@@ -844,7 +865,7 @@ def verify_otp():
 
     data = request.get_json() or {}
     identifier = data.get("identifier", "").strip()
-    otp_code = data.get("otp_code", "").strip()
+    otp_code = (data.get("otp_code") or data.get("otp") or "").strip()
     portal = data.get("portal", "any").strip().lower()
 
     if not identifier or not otp_code:

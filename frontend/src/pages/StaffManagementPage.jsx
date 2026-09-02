@@ -171,7 +171,7 @@ export default function StaffManagementPage() {
   const selectedRoleObj = roles.find((r) => r.value === formData.role) || roles[0]
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 min-h-screen bg-gradient-to-br from-[#0b132b] via-[#0f172a] to-[#0b132b] text-slate-100">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 min-h-screen bg-transparent text-slate-100">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

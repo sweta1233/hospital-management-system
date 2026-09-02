@@ -256,7 +256,7 @@ To get an accurate differential diagnosis and customized treatment plan, we reco
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-gradient-to-br from-[#0b132b] via-[#0f172a] to-[#0b132b] text-slate-100 flex flex-col">
+    <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-transparent text-slate-100 flex flex-col">
       {/* Header */}
       <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

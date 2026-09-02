@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -6,12 +6,15 @@ import {
   Shield, Eye, EyeOff, Lock, Mail, ArrowRight, CheckCircle2,
   Stethoscope, HeartPulse, Building2, Pill, FlaskConical,
   ShieldAlert, ArrowLeft, UserCheck, Activity, KeyRound,
-  Smartphone, Sparkles, UserPlus, Microscope
+  Smartphone, Sparkles, UserPlus, Microscope, RefreshCw,
+  Award, ShieldCheck, ChevronRight, AlertCircle
 } from 'lucide-react'
 import { loginSuccess } from '../store/slices/authSlice'
 import api from '../services/api'
 import { initSocket } from '../services/socket'
 import { getUserRoles } from '../utils/auth'
+import DiscreteOtpInput from '../components/DiscreteOtpInput'
+import AppBackdrop from '../components/AppBackdrop'
 
 export default function StaffLoginPage() {
   const [authMode, setAuthMode] = useState('password') // 'password' | 'otp'
@@ -23,12 +26,25 @@ export default function StaffLoginPage() {
   const [otpSent, setOtpSent] = useState(false)
   const [otpCode, setOtpCode] = useState('')
   const [otpLoading, setOtpLoading] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [dispatchInfo, setDispatchInfo] = useState(null)
 
   const [error, setError] = useState('')
   const [infoMsg, setInfoMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+
+  // Resend Countdown Timer
+  useEffect(() => {
+    let timer
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1)
+      }, 1000)
+    }
+    return () => clearInterval(timer)
+  }, [countdown])
 
   const demoAccounts = [
     { role: 'Admin', email: 'admin@hms.local', icon: Shield, desc: 'Full System Access', color: 'from-blue-500 via-indigo-500 to-blue-600', ring: 'ring-blue-500' },
@@ -59,7 +75,7 @@ export default function StaffLoginPage() {
   }
 
   const handlePasswordLogin = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     setLoading(true)
     setError('')
     setInfoMsg('')
@@ -83,10 +99,7 @@ export default function StaffLoginPage() {
       redirectByRole(authData.user)
     } catch (err) {
       const errorMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        'Invalid credentials or server connection error.'
+        err.response?.data?.message || 'Invalid credentials or unauthorized staff account.'
       setError(errorMsg)
     } finally {
       setLoading(false)
@@ -96,34 +109,39 @@ export default function StaffLoginPage() {
   // Request Staff OTP
   const handleSendOtp = async (e) => {
     e?.preventDefault()
-    if (!email.trim()) {
-      setError('Please enter your staff email or phone number first.')
+    const cleanEmail = email.trim().toLowerCase()
+    if (!cleanEmail) {
+      setError('Please enter your staff email address.')
       return
     }
 
     setOtpLoading(true)
     setError('')
     setInfoMsg('')
+    setOtpCode('')
 
     try {
       const res = await api.post('/auth/send-otp', {
-        identifier: email.trim(),
+        identifier: cleanEmail,
         portal: 'staff',
       })
       setOtpSent(true)
-      setInfoMsg(res.data?.message || 'A 6-digit verification code has been dispatched to your official email/SMS.')
+      setCountdown(30)
+      const data = res.data?.data || {}
+      setDispatchInfo(data.dispatch_info || null)
+      setInfoMsg(res.data?.message || 'A 6-digit staff verification code has been dispatched!')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP. Please verify your staff email/phone.')
+      setError(err.response?.data?.message || 'Failed to send OTP to this staff account.')
     } finally {
       setOtpLoading(false)
     }
   }
 
-  // Verify OTP and Login
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault()
-    if (!otpCode.trim() || otpCode.trim().length !== 6) {
-      setError('Please enter the complete 6-digit verification code.')
+  // Verify Staff OTP
+  const handleVerifyOtp = async (codeToVerify) => {
+    const code = codeToVerify || otpCode
+    if (!code || code.trim().length !== 6) {
+      setError('Please enter the complete 6-digit OTP code.')
       return
     }
 
@@ -133,7 +151,7 @@ export default function StaffLoginPage() {
     try {
       const res = await api.post('/auth/verify-otp', {
         identifier: email.trim(),
-        otp_code: otpCode.trim(),
+        otp_code: code.trim(),
         portal: 'staff',
       })
 
@@ -153,147 +171,154 @@ export default function StaffLoginPage() {
     }
   }
 
+  // Masked identifier for privacy
+  const getMaskedTarget = () => {
+    const raw = email.trim()
+    if (!raw) return ''
+    if (raw.includes('@')) {
+      const [user, domain] = raw.split('@')
+      const maskedUser = user.length > 2 ? user[0] + '••••' + user.slice(-1) : user + '•••'
+      return `${maskedUser}@${domain}`
+    }
+    const digits = raw.replace(/\D/g, '')
+    if (digits.length >= 10) {
+      return `+91 ${digits.slice(-10, -8)}••••••${digits.slice(-2)}`
+    }
+    return raw
+  }
+
   return (
-    <div className="min-h-screen bg-[#070d1e] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
-      {/* ======================================================== */}
-      {/* MULTI-COLOR AMBIENT LIGHTING & REDUCED OPACITY BACKGROUND ART */}
-      {/* ======================================================== */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-cyan-500/20 blur-[170px] animate-pulse" style={{ animationDuration: '6s' }} />
-        <div className="absolute top-1/3 -right-40 w-[650px] h-[650px] rounded-full bg-purple-600/20 blur-[180px] animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute -bottom-40 left-1/3 w-[600px] h-[600px] rounded-full bg-rose-500/15 blur-[170px] animate-pulse" style={{ animationDuration: '7s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-emerald-600/10 blur-[190px]" />
+    <div className="min-h-screen text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden bg-[#080c14] selection:bg-purple-500 selection:text-white">
+      {/* ── 5 AI Background Visuals Ambient Backdrop with Low Opacity ── */}
+      <AppBackdrop opacity="opacity-15" showSwitcher={false} />
 
-        {/* AI Medical Holographic Grid (Reduced Opacity) */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.07] stroke-cyan-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="staff-grid" width="100" height="100" patternUnits="userSpaceOnUse">
-              <circle cx="50" cy="50" r="1.5" fill="#38bdf8" />
-              <path d="M 50 0 L 50 100 M 0 50 L 100 50" fill="none" stroke="currentColor" strokeWidth="0.4" strokeDasharray="3 3" />
-              <circle cx="50" cy="50" r="28" fill="none" stroke="#818cf8" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#staff-grid)" />
-        </svg>
+      <div className="max-w-5xl w-full mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Left Side: Clinical Roles Selector (5 Cols) */}
+        <div className="lg:col-span-5 flex flex-col justify-between space-y-5 p-7 rounded-3xl bg-slate-900/90 border border-purple-500/30 shadow-2xl backdrop-blur-2xl relative overflow-hidden">
+          <div className="absolute inset-0 ai-scanline opacity-20 pointer-events-none" />
 
-        {/* Floating Icons with Reduced Opacity */}
-        <div className="absolute top-16 right-16 opacity-10 text-cyan-400">
-          <Stethoscope className="w-56 h-56 animate-pulse" />
-        </div>
-        <div className="absolute bottom-12 left-12 opacity-10 text-purple-400">
-          <Microscope className="w-52 h-52" />
-        </div>
-      </div>
+          {/* Brand & Top Bar */}
+          <div className="relative z-10">
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center space-x-2 text-xs font-semibold text-purple-400 hover:text-purple-300 transition cursor-pointer mb-4 group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Hospital Home</span>
+            </button>
 
-      <div className="max-w-6xl w-full mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-        {/* Left Side: Branding & Quick Switcher */}
-        <motion.div
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="lg:col-span-7 space-y-6 text-left"
-        >
-          {/* Back Button */}
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center space-x-2 text-slate-400 hover:text-cyan-300 transition cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-semibold">Back to Home</span>
-          </button>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
+                <Shield className="w-7 h-7" />
+              </div>
+              <div>
+                <h1 className="text-xl font-extrabold text-white tracking-tight">
+                  Arogya<span className="gradient-text ml-1">HMS</span>
+                </h1>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" /> Clinical & Staff Gateway
+                </p>
+              </div>
+            </div>
 
-          {/* Badge */}
-          <div className="inline-flex items-center space-x-2.5 px-3.5 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-400 text-xs font-semibold backdrop-blur-md shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span>Clinical & Administrative Hospital Staff</span>
+            <h2 className="text-xl font-extrabold text-white leading-snug">
+              Authorized Hospital <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">Operations Access</span>
+            </h2>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Select a quick demo role or enter your verified credentials for encrypted clinical workstation access.
+            </p>
           </div>
 
-          {/* Heading */}
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            Hospital Staff <br />
-            <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">Authentication Portal</span>
-          </h1>
-
-          <p className="text-slate-300 text-sm sm:text-base max-w-xl leading-relaxed">
-            Secure clinical access for doctors, nurses, pathologists, pharmacists, and administrators with strict role-based authorization.
-          </p>
-
-          {/* 1-Click Role Switcher */}
-          <div className="pt-2">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <UserCheck className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Quick Demo Sign-In Profiles
-                </span>
-              </div>
-              <Link
-                to="/staff/register"
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center space-x-1"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Register New Staff</span>
-              </Link>
+          {/* Quick Demo Role Cards Grid */}
+          <div className="space-y-2 relative z-10">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center justify-between">
+              <span>Quick Demo Workstations</span>
+              <span className="text-purple-400 font-normal">Click to Autofill</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {demoAccounts.map((acc) => {
+
+            <div className="grid grid-cols-2 gap-2">
+              {demoAccounts.map((acc, i) => {
                 const Icon = acc.icon
                 const isSelected = email === acc.email
                 return (
                   <button
-                    key={acc.role}
+                    key={i}
                     type="button"
                     onClick={() => {
                       setEmail(acc.email)
                       setPassword('Password@123')
+                      setError('')
+                      setInfoMsg('')
                       setOtpSent(false)
                     }}
-                    className={`p-3 rounded-2xl text-left transition-all border flex items-center space-x-2.5 cursor-pointer ${
+                    className={`flex items-center space-x-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                       isSelected
-                        ? `bg-slate-800/90 border-cyan-400 shadow-lg shadow-cyan-500/20 ring-2 ring-cyan-500/40`
-                        : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-800 hover:border-slate-700'
+                        ? 'bg-purple-950/60 border-purple-400 shadow-md shadow-purple-500/20'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-purple-500/40 hover:bg-slate-800/60'
                     }`}
                   >
-                    <div className={`w-8 h-8 rounded-xl bg-gradient-to-tr ${acc.color} flex items-center justify-center text-white flex-shrink-0 shadow-sm`}>
-                      <Icon className="w-4 h-4" />
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-tr ${acc.color} text-white shadow-sm flex-shrink-0`}>
+                      <Icon className="w-3.5 h-3.5" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-xs text-white truncate">{acc.role}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{acc.desc}</p>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-white truncate">{acc.role}</div>
+                      <div className="text-[9px] text-slate-400 truncate">{acc.desc}</div>
                     </div>
                   </button>
                 )
               })}
             </div>
           </div>
-        </motion.div>
 
-        {/* Right Side: Staff Login Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
-          className="lg:col-span-5"
-        >
-          <div className="glass-panel rounded-3xl p-6 sm:p-8 border-2 border-cyan-500/40 shadow-2xl shadow-cyan-950/60 relative bg-slate-900/90 backdrop-blur-2xl">
-            {/* Top Emblem */}
-            <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-800">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
-                  <Shield className="w-7 h-7" />
+          {/* Security & Compliance Footer */}
+          <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 relative z-10">
+            <span className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Role-Based Access Control</span>
+            </span>
+            <span className="font-mono text-purple-400">SSL 256-Bit</span>
+          </div>
+        </div>
+
+        {/* Right Side: Interactive Staff Login Form (7 Cols) */}
+        <div className="lg:col-span-7">
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 lg:p-9 border border-purple-500/40 shadow-2xl backdrop-blur-2xl relative overflow-hidden bg-slate-900/95">
+            {/* Corner Glow */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Mobile Top Header */}
+            <div className="lg:hidden mb-6 flex items-center justify-between">
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Home</span>
+              </button>
+              <div className="flex items-center space-x-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+                  S
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">Staff Login</h2>
-                  <p className="text-xs text-cyan-300 mt-0.5">Clinical access control</p>
-                </div>
+                <span className="text-sm font-bold text-white">Staff Portal</span>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold flex items-center">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> RBAC Active
-              </span>
             </div>
 
-            {/* Login Mode Toggle */}
-            <div className="flex rounded-2xl bg-slate-950/90 p-1.5 border border-slate-800 mb-5">
+            {/* Form Title */}
+            <div className="mb-6">
+              <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>Hospital Personnel Terminal</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Staff Authentication
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Enter your authorized clinical credentials or request a 6-digit staff OTP.
+              </p>
+            </div>
+
+            {/* Mode Switcher */}
+            <div className="flex rounded-2xl bg-slate-950/90 p-1.5 border border-slate-800 mb-6">
               <button
                 type="button"
                 onClick={() => {
@@ -301,15 +326,16 @@ export default function StaffLoginPage() {
                   setError('')
                   setInfoMsg('')
                 }}
-                className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
                   authMode === 'password'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-purple-500/25'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Password</span>
+                <KeyRound className="w-4 h-4" />
+                <span>Password Login</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -317,14 +343,14 @@ export default function StaffLoginPage() {
                   setError('')
                   setInfoMsg('')
                 }}
-                className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
                   authMode === 'otp'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-purple-500/25'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>OTP Verification</span>
+                <Smartphone className="w-4 h-4" />
+                <span>6-Digit Staff OTP</span>
               </button>
             </div>
 
@@ -332,222 +358,247 @@ export default function StaffLoginPage() {
             <AnimatePresence>
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-5 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center space-x-2.5"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="mb-5 p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex items-start space-x-2.5 text-rose-300 text-xs shadow-lg"
                 >
-                  <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Info Message */}
+            {/* Success / Info Message */}
             <AnimatePresence>
               {infoMsg && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-5 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="mb-5 p-3.5 rounded-2xl bg-emerald-950/80 border border-emerald-500/50 flex items-start space-x-2.5 text-emerald-300 text-xs shadow-lg"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>{infoMsg}</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">{infoMsg}</p>
+                    {dispatchInfo?.dev_mode && dispatchInfo?.otp_code && (
+                      <p className="mt-1 font-mono text-[11px] bg-slate-900/90 p-1.5 rounded-lg border border-emerald-500/30 text-emerald-200">
+                        🧪 Sandbox Staff Code: <strong className="text-white text-sm tracking-wider">{dispatchInfo.otp_code}</strong>
+                      </p>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Password Login Form */}
+            {/* PASSWORD LOGIN FORM */}
             {authMode === 'password' && (
               <form onSubmit={handlePasswordLogin} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Staff Email Address
+                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Staff Institutional Email
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Mail className="w-4 h-4" />
+                    </div>
                     <input
-                      type="text"
-                      required
+                      type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="doctor@hospital.org or phone"
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl glass-input text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
+                      placeholder="doctor@hms.local"
+                      className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950/80 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-500/20 transition"
+                      required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Password
+                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Security Password
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Lock className="w-4 h-4" />
+                    </div>
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full pl-10 pr-11 py-3 rounded-2xl glass-input text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
+                      className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-950/80 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-500/20 transition"
+                      required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <label className="flex items-center text-slate-400 hover:text-slate-300 cursor-pointer">
-                    <input type="checkbox" defaultChecked className="rounded border-slate-700 bg-slate-800 text-cyan-500 mr-2 focus:ring-0" />
-                    Remember credentials
-                  </label>
-                  <Link
-                    to="/forgot-password"
-                    className="text-cyan-400 hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-cyan-500/25 transition-all duration-200 flex items-center justify-center space-x-2 group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-extrabold text-sm shadow-xl shadow-purple-500/25 flex items-center justify-center space-x-2 transition transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
                 >
                   {loading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Verifying Staff Credentials...</span>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Authenticating Staff...</span>
                     </>
                   ) : (
                     <>
-                      <span>Enter Staff Portal</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <span>Enter Clinical Workstation</span>
+                      <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
               </form>
             )}
 
-            {/* OTP Login Form */}
+            {/* OTP LOGIN FORM */}
             {authMode === 'otp' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Staff Email or Phone Number
-                  </label>
-                  <div className="flex space-x-2">
-                    <div className="relative flex-1">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        required
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value)
-                          setOtpSent(false)
-                        }}
-                        placeholder="doctor@hospital.org or phone"
-                        className="w-full pl-10 pr-3 py-3 rounded-2xl glass-input text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={otpLoading || !email.trim()}
-                      className="px-4 py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center space-x-1.5 cursor-pointer shadow-md shadow-cyan-600/20"
-                    >
-                      {otpLoading ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <span>{otpSent ? 'Resend' : 'Send OTP'}</span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {otpSent && (
-                  <form onSubmit={handleVerifyOtp} className="space-y-4 pt-1">
+              <div>
+                {!otpSent ? (
+                  <form onSubmit={handleSendOtp} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Enter 6-Digit Verification Code
+                      <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Staff Email or Verified Phone
                       </label>
                       <div className="relative">
-                        <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-purple-400">
+                          <Mail className="w-4 h-4" />
+                        </div>
                         <input
                           type="text"
-                          maxLength={6}
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="doctor@hms.local or 9876543210"
+                          className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950/80 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-500/20 transition"
                           required
-                          value={otpCode}
-                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                          placeholder="123456"
-                          className="w-full pl-10 pr-4 py-3 rounded-2xl glass-input text-center text-lg tracking-widest font-mono text-cyan-300 placeholder-slate-600 focus:outline-none"
+                          autoFocus
                         />
                       </div>
                     </div>
 
                     <button
                       type="submit"
-                      disabled={loading || otpCode.length < 6}
-                      className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-cyan-500/25 transition-all duration-200 flex items-center justify-center space-x-2 group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      disabled={otpLoading}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-extrabold text-sm shadow-xl shadow-purple-500/25 flex items-center justify-center space-x-2 transition transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
                     >
-                      {loading ? (
+                      {otpLoading ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Verifying Code...</span>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Dispatching Staff Code...</span>
                         </>
                       ) : (
                         <>
-                          <span>Verify & Enter Staff Portal</span>
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          <span>Send 6-Digit Staff OTP</span>
+                          <ArrowRight className="w-4 h-4" />
                         </>
                       )}
                     </button>
                   </form>
+                ) : (
+                  <div className="space-y-5">
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-purple-500/30 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                          Staff OTP Dispatched To:
+                        </span>
+                        <span className="text-sm font-mono font-bold text-purple-300">
+                          {getMaskedTarget()}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOtpSent(false)
+                          setOtpCode('')
+                          setError('')
+                          setInfoMsg('')
+                        }}
+                        className="text-xs text-purple-400 hover:text-purple-300 underline font-semibold cursor-pointer"
+                      >
+                        Change
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-2 text-center">
+                        Enter 6-Digit Staff OTP
+                      </label>
+                      <DiscreteOtpInput
+                        value={otpCode}
+                        onChange={(code) => setOtpCode(code)}
+                        onComplete={(code) => handleVerifyOtp(code)}
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleVerifyOtp(otpCode)}
+                      disabled={loading || otpCode.length !== 6}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-extrabold text-sm shadow-xl shadow-purple-500/25 flex items-center justify-center space-x-2 transition transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
+                    >
+                      {loading ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Verifying Staff Access...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Verify & Access Workstation</span>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+                      <span>Didn't receive the staff code?</span>
+                      <button
+                        type="button"
+                        disabled={countdown > 0 || otpLoading}
+                        onClick={handleSendOtp}
+                        className="font-bold text-purple-400 hover:text-purple-300 disabled:text-slate-600 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-1"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${otpLoading ? 'animate-spin' : ''}`} />
+                        <span>{countdown > 0 ? `Resend in ${countdown}s` : 'Resend Staff OTP'}</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Register New Staff Button & Patient Portal Link */}
-            <div className="mt-6 pt-5 border-t border-slate-800 space-y-3 text-center">
-              <div className="p-3 rounded-2xl bg-cyan-950/40 border border-cyan-500/20 text-center">
-                <p className="text-xs text-slate-300 mb-2">New Doctor, Nurse, Pharmacist, or Staff?</p>
+            {/* Bottom Register Links */}
+            <div className="mt-6 pt-6 border-t border-slate-800 text-center space-y-3">
+              <p className="text-xs text-slate-400">
+                Need to onboard a new clinical staff member?{' '}
                 <Link
                   to="/staff/register"
-                  className="inline-flex items-center justify-center space-x-1.5 w-full py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs border border-purple-400/30 transition shadow-md"
+                  className="font-bold text-purple-400 hover:text-purple-300 underline"
                 >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>Register New Staff Account</span>
-                </Link>
-              </div>
-
-              <p className="text-xs text-slate-400">
-                Are you a patient?{' '}
-                <Link
-                  to="/patient/login"
-                  className="text-cyan-400 hover:underline font-semibold"
-                >
-                  Go to Patient Portal
+                  Register Staff Account
                 </Link>
               </p>
-            </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center text-slate-400">
-                <Shield className="w-3.5 h-3.5 text-emerald-400 mr-1.5" /> HIPAA Certified
-              </span>
-              <span className="flex items-center text-slate-400">
-                <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 mr-1.5" /> 256-Bit SSL
-              </span>
+              <div className="flex items-center justify-center space-x-4 text-[11px] text-slate-500">
+                <Link to="/patient/login" className="hover:text-cyan-400 transition">
+                  Patient Portal Login &rarr;
+                </Link>
+                <span>&bull;</span>
+                <Link to="/" className="hover:text-slate-300 transition">
+                  Hospital Home
+                </Link>
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   )

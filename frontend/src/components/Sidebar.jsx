@@ -46,12 +46,12 @@ export default function Sidebar({ isOpen, onClose }) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#080e22]/95 backdrop-blur-2xl border-r border-slate-800/80 text-slate-300 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#0a0e1a]/95 backdrop-blur-2xl border-r border-slate-800/80 text-slate-300 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
       {/* Brand */}
-      <div className="h-18 flex items-center px-5 border-b border-slate-800/80 bg-[#060b1b]">
+      <div className="h-18 flex items-center px-5 border-b border-slate-800/80 bg-[#080c14]">
         <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/25 mr-3">
           <HeartPulse className="h-6 w-6" />
         </div>
@@ -102,7 +102,7 @@ export default function Sidebar({ isOpen, onClose }) {
       </nav>
 
       {/* User / Role Footer (Multi-Color Badge) */}
-      <div className="p-4 border-t border-slate-800/80 bg-[#060b1b]/80">
+      <div className="p-4 border-t border-slate-800/80 bg-[#080c14]/80">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-purple-600 to-indigo-600 flex items-center justify-center font-black text-xs text-white uppercase shadow-md">
             {user?.first_name?.charAt(0) || user?.full_name?.charAt(0) || 'U'}
