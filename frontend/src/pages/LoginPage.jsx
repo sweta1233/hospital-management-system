@@ -10,6 +10,7 @@ import {
 import { loginSuccess } from '../store/slices/authSlice'
 import api from '../services/api'
 import { initSocket } from '../services/socket'
+import AppBackdrop from '../components/AppBackdrop'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('admin@hms.local')
@@ -47,14 +48,9 @@ export default function LoginPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#070d1e] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
-      {/* Dynamic Background Glows */}
-      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-cyan-600/15 blur-[160px] pointer-events-none animate-glow" />
-      <div className="absolute -bottom-40 -right-40 w-[700px] h-[700px] rounded-full bg-indigo-600/15 blur-[180px] pointer-events-none animate-glow" style={{ animationDelay: '3s' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-[150px] pointer-events-none" />
-
-      {/* Grid Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
+    <div className="min-h-screen bg-[#080c14] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
+      {/* ── 5 AI Background Visuals Ambient Backdrop ── */}
+      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
 
       <div className="max-w-6xl w-full mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 

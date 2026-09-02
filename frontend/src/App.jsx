@@ -53,7 +53,7 @@ function Layout({ children }) {
 
   return (
     <div className="flex h-screen bg-[#080c14] relative overflow-hidden">
-      <AppBackdrop opacity="opacity-10" showSwitcher={false} />
+      <AppBackdrop opacity="opacity-40" showSwitcher={true} />
 
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -100,7 +100,7 @@ function Layout({ children }) {
         </header>
 
         {/* Page Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#080c14]/80 backdrop-blur-sm">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#080c14]/40 backdrop-blur-sm">
           {children}
         </main>
       </div>
