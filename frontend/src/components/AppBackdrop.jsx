@@ -61,7 +61,7 @@ function getInitialIndex(pathname, forceIndex) {
 }
 
 export default function AppBackdrop({
-  opacity = 'opacity-35',
+  opacity = 'opacity-70',
   showSwitcher = false,
   forceIndex = null,
   autoCycle = null
@@ -105,31 +105,31 @@ export default function AppBackdrop({
           className={`absolute inset-0 ${opacity} bg-cover bg-center bg-no-repeat transition-all duration-700`}
           style={{
             backgroundImage: `url(${activeImage.src})`,
-            filter: 'contrast(1.08) brightness(0.95) saturate(1.25)',
+            filter: 'contrast(1.12) brightness(1.05) saturate(1.30)',
           }}
         />
       </AnimatePresence>
 
-      {/* ── Softened Neutral Dark Graphite Overlay (Allows Background Visuals to Shine Through) ── */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#080c14]/45 via-[#0a0e1a]/35 to-[#080c14]/65" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-transparent via-[#080c14]/25 to-[#080c14]/55" />
+      {/* ── Luminous Softened Graphite Ambient Overlay (Ensures AI Artwork is Crisp & High-Visibility) ── */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#080c14]/20 via-[#0a0e1a]/10 to-[#080c14]/35" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-transparent via-[#080c14]/10 to-[#080c14]/30" />
 
       {/* ── Cyber Medical Ambient Light Flares ── */}
       <div
-        className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-emerald-500/12 blur-[140px] animate-pulse pointer-events-none"
+        className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-emerald-500/15 blur-[140px] animate-pulse pointer-events-none"
         style={{ animationDuration: '8s' }}
       />
       <div
-        className="absolute top-1/3 -right-32 w-[600px] h-[600px] rounded-full bg-cyan-500/12 blur-[150px] animate-pulse pointer-events-none"
+        className="absolute top-1/3 -right-32 w-[600px] h-[600px] rounded-full bg-cyan-500/15 blur-[150px] animate-pulse pointer-events-none"
         style={{ animationDuration: '9s' }}
       />
       <div
-        className="absolute -bottom-40 left-1/4 w-[650px] h-[650px] rounded-full bg-purple-600/12 blur-[160px] animate-pulse pointer-events-none"
+        className="absolute -bottom-40 left-1/4 w-[650px] h-[650px] rounded-full bg-purple-600/15 blur-[160px] animate-pulse pointer-events-none"
         style={{ animationDuration: '10s' }}
       />
 
       {/* ── Micro Cyber Grid Pattern ── */}
-      <div className="absolute inset-0 ai-grid-overlay opacity-10 pointer-events-none" />
+      <div className="absolute inset-0 ai-grid-overlay opacity-15 pointer-events-none" />
 
       {/* Optional Interactive Indicator Switcher (Allows switching theme/visual scene) */}
       {showSwitcher && (

@@ -51,9 +51,19 @@ function Layout({ children }) {
 
   const primaryRole = user?.primary_role || getUserRoles(user)[0] || 'User'
 
+  const roleColor = {
+    admin: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
+    doctor: 'text-cyan-300 bg-cyan-500/10 border-cyan-500/30',
+    nurse: 'text-teal-300 bg-teal-500/10 border-teal-500/30',
+    receptionist: 'text-purple-300 bg-purple-500/10 border-purple-500/30',
+    pharmacist: 'text-amber-300 bg-amber-500/10 border-amber-500/30',
+    lab_technician: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30',
+    patient: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+  }[primaryRole.toLowerCase()] || 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30'
+
   return (
     <div className="flex h-screen bg-[#080c14] relative overflow-hidden">
-      <AppBackdrop opacity="opacity-40" showSwitcher={true} />
+      <AppBackdrop opacity="opacity-75" showSwitcher={true} />
 
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -71,26 +81,26 @@ function Layout({ children }) {
           <div className="flex items-center space-x-4 ml-auto">
             <button
               onClick={() => setNotifOpen(true)}
-              className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/60 rounded-xl transition relative group cursor-pointer"
+              className="p-2.5 text-slate-300 hover:text-cyan-400 hover:bg-slate-800/60 rounded-xl transition relative group cursor-pointer"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-cyan-400 rounded-full shadow-sm shadow-cyan-400 animate-pulse" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-400 rounded-full shadow-sm shadow-emerald-400 animate-pulse" />
             </button>
 
-            <div className="h-6 w-px bg-slate-700" />
+            <div className="h-6 w-px bg-slate-700/80" />
 
             <div className="flex items-center space-x-3">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-bold text-white tracking-tight">
                   {user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'Portal User'}
                 </p>
-                <p className="text-xs text-cyan-400 font-medium capitalize">
+                <span className={`inline-block px-2 py-0.5 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider capitalize ${roleColor}`}>
                   {primaryRole.replace('_', ' ')}
-                </p>
+                </span>
               </div>
               <button
                 onClick={handleLogout}
-                className="p-2.5 text-slate-400 hover:text-rose-400 rounded-xl hover:bg-rose-950/30 transition group cursor-pointer"
+                className="p-2.5 text-slate-400 hover:text-rose-400 rounded-xl hover:bg-rose-950/40 transition group cursor-pointer"
                 title="Logout"
               >
                 <LogOut className="h-5 w-5 group-hover:rotate-12 transition-transform" />
@@ -100,7 +110,7 @@ function Layout({ children }) {
         </header>
 
         {/* Page Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#080c14]/40 backdrop-blur-sm">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#080c14]/20 backdrop-blur-[1px]">
           {children}
         </main>
       </div>

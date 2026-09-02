@@ -117,22 +117,22 @@ export default function StaffRegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
-      {/* ── 5 AI Background Visuals Ambient Backdrop with Opacity ── */}
-      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
+      {/* ── 5 AI Background Visuals Ambient Backdrop with High Visibility ── */}
+      <AppBackdrop opacity="opacity-70" showSwitcher={false} />
 
       <div className="max-w-4xl w-full mx-auto relative z-10 space-y-6">
         {/* Back Button & Header */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate('/staff/login')}
-            className="flex items-center space-x-2 text-slate-400 hover:text-cyan-300 transition cursor-pointer"
+            className="flex items-center space-x-2 text-slate-400 hover:text-purple-300 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-semibold">Back to Staff Login</span>
           </button>
 
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-purple-500/30 text-purple-300 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
             <span>Hospital Staff Onboarding Portal</span>
           </div>
         </div>
@@ -141,12 +141,12 @@ export default function StaffRegisterPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="glass-panel rounded-3xl p-6 sm:p-10 border-2 border-cyan-500/40 shadow-2xl shadow-cyan-950/60 relative bg-slate-900/90 backdrop-blur-2xl"
+          className="glass-panel rounded-3xl p-6 sm:p-10 border-2 border-purple-500/40 shadow-2xl shadow-purple-950/60 relative bg-slate-900/85 backdrop-blur-xl"
         >
           {/* Header */}
           <div className="mb-8 pb-6 border-b border-slate-800">
             <h1 className="text-3xl font-extrabold text-white tracking-tight">
-              Hospital Staff <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">Registration</span>
+              Hospital Staff <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">Registration</span>
             </h1>
             <p className="text-sm text-slate-300 mt-1">
               Join the clinical and operational team. Select your role to set up your clinical credentials.

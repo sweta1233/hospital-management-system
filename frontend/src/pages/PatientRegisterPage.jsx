@@ -71,8 +71,8 @@ export default function PatientRegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex items-center justify-center p-4 py-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
-      {/* ── 5 AI Background Visuals Ambient Backdrop with Opacity ── */}
-      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
+      {/* ── 5 AI Background Visuals Ambient Backdrop with High Visibility ── */}
+      <AppBackdrop opacity="opacity-70" showSwitcher={false} />
 
       <div className="max-w-2xl w-full mx-auto relative z-10">
         {/* Back Button */}
@@ -88,15 +88,17 @@ export default function PatientRegisterPage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="glass-panel rounded-3xl p-6 sm:p-10 border-2 border-cyan-500/40 shadow-2xl shadow-cyan-950/60 relative bg-slate-900/90 backdrop-blur-2xl"
+          className="glass-panel rounded-3xl p-6 sm:p-10 border-2 border-cyan-500/40 shadow-2xl shadow-cyan-950/60 relative bg-slate-900/85 backdrop-blur-xl"
         >
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
               <UserRound className="w-8 h-8" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Patient Registration</h1>
-            <p className="text-sm text-cyan-300">Create your private health portal account</p>
+            <h1 className="text-3xl font-black text-white mb-2">
+              Patient <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">Registration</span>
+            </h1>
+            <p className="text-sm text-cyan-300 font-medium">Create your private health portal account</p>
           </div>
 
           {/* Error Message */}

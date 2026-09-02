@@ -201,12 +201,12 @@ export default function StaffLoginPage() {
 
   return (
     <div className="min-h-screen text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden bg-[#080c14] selection:bg-purple-500 selection:text-white">
-      {/* ── 5 AI Background Visuals Ambient Backdrop with Opacity ── */}
-      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
+      {/* ── 5 AI Background Visuals Ambient Backdrop with High Visibility ── */}
+      <AppBackdrop opacity="opacity-70" showSwitcher={false} />
 
       <div className="max-w-5xl w-full mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Left Side: Clinical Roles Selector (5 Cols) */}
-        <div className="lg:col-span-5 flex flex-col justify-between space-y-5 p-7 rounded-3xl bg-slate-900/90 border border-purple-500/30 shadow-2xl backdrop-blur-2xl relative overflow-hidden">
+        <div className="lg:col-span-5 flex flex-col justify-between space-y-5 p-7 rounded-3xl bg-slate-900/80 border border-purple-500/30 shadow-2xl backdrop-blur-xl relative overflow-hidden">
           <div className="absolute inset-0 ai-scanline opacity-20 pointer-events-none" />
 
           {/* Brand & Top Bar */}
@@ -294,7 +294,7 @@ export default function StaffLoginPage() {
 
         {/* Right Side: Interactive Staff Login Form (7 Cols) */}
         <div className="lg:col-span-7">
-          <div className="glass-panel rounded-3xl p-6 sm:p-8 lg:p-9 border border-purple-500/40 shadow-2xl backdrop-blur-2xl relative overflow-hidden bg-slate-900/95">
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 lg:p-9 border border-purple-500/40 shadow-2xl backdrop-blur-xl relative overflow-hidden bg-slate-900/85">
             {/* Corner Glow */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 

@@ -63,7 +63,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 selection:bg-emerald-500 selection:text-white relative overflow-hidden">
       {/* ── 5 AI-Generated Uploaded Background Images with High-Visibility Layer ── */}
-      <AppBackdrop opacity="opacity-45" showSwitcher={true} />
+      <AppBackdrop opacity="opacity-75" showSwitcher={true} />
 
       <div className="relative z-10">
         {/* Main Header / Navigation */}

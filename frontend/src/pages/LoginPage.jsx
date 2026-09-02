@@ -49,8 +49,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
-      {/* ── 5 AI Background Visuals Ambient Backdrop ── */}
-      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
+      {/* ── 5 AI Background Visuals Ambient Backdrop with High Visibility ── */}
+      <AppBackdrop opacity="opacity-70" showSwitcher={false} />
 
       <div className="max-w-6xl w-full mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 
