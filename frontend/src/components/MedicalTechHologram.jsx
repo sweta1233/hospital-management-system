@@ -74,12 +74,12 @@ export default function MedicalTechHologram({ onAction }) {
     return () => clearInterval(interval)
   }, [])
 
-  // Auto-Cycle AI Hologram Studio every 1.8 seconds (pauses briefly on user interaction)
+  // Auto-Cycle AI Hologram Studio every 1 second (pauses briefly on user hover)
   useEffect(() => {
     if (isPaused) return
     const autoCycle = setInterval(() => {
       setActiveTab((prev) => (prev + 1) % modules.length)
-    }, 1800)
+    }, 1000)
     return () => clearInterval(autoCycle)
   }, [isPaused, modules.length])
 
