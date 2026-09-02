@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Shield, Eye, EyeOff, Lock, Mail, Phone, User, ArrowRight,
@@ -8,10 +7,8 @@ import {
   FlaskConical, ArrowLeft, ShieldAlert, Award, FileText,
   DollarSign, Briefcase, Microscope, Activity
 } from 'lucide-react'
-import { loginSuccess } from '../store/slices/authSlice'
 import api from '../services/api'
-import { initSocket } from '../services/socket'
-import { getUserRoles } from '../utils/auth'
+import AppBackdrop from '../components/AppBackdrop'
 
 export default function StaffRegisterPage() {
   const [role, setRole] = useState('doctor')
@@ -36,7 +33,6 @@ export default function StaffRegisterPage() {
   const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const dispatch = useDispatch()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -61,25 +57,6 @@ export default function StaffRegisterPage() {
     { id: 'receptionist', name: 'Receptionist', icon: Building2, desc: 'Appointments & Check-in', color: 'from-amber-500 via-orange-500 to-yellow-600', ring: 'ring-amber-500' },
     { id: 'admin', name: 'Administrator', icon: Shield, desc: 'Hospital Operations', color: 'from-blue-500 via-indigo-500 to-blue-600', ring: 'ring-blue-500' },
   ]
-
-  const redirectByRole = (user) => {
-    const userRoles = getUserRoles(user)
-    if (userRoles.includes('admin')) {
-      navigate('/admin/dashboard')
-    } else if (userRoles.includes('doctor')) {
-      navigate('/doctor/dashboard')
-    } else if (userRoles.includes('nurse')) {
-      navigate('/nurse/dashboard')
-    } else if (userRoles.includes('receptionist')) {
-      navigate('/receptionist/dashboard')
-    } else if (userRoles.includes('pharmacist')) {
-      navigate('/pharmacy/dashboard')
-    } else if (userRoles.includes('lab_technician')) {
-      navigate('/laboratory/dashboard')
-    } else {
-      navigate('/dashboard')
-    }
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -119,22 +96,14 @@ export default function StaffRegisterPage() {
         payload.experience_years = parseInt(experienceYears, 10) || 2
       }
 
-      const res = await api.post('/auth/staff/register', payload)
-      const authData = res.data?.data
-
-      if (authData) {
-        setSuccessMsg('Staff account created successfully! Signing in...')
-        dispatch(loginSuccess(authData))
-        if (authData.access_token) {
-          initSocket(authData.access_token)
+      await api.post('/auth/staff/register', payload)
+      // Mandatory login post-registration: Redirect to staff login with flash message & prefilled email
+      navigate('/staff/login', {
+        state: {
+          message: 'Staff account created successfully! Please log in with your credentials to access your hospital workstation.',
+          emailOrPhone: email.trim().toLowerCase()
         }
-        setTimeout(() => {
-          redirectByRole(authData.user)
-        }, 1200)
-      } else {
-        setSuccessMsg('Registration complete! Please log in.')
-        setTimeout(() => navigate('/staff/login'), 1500)
-      }
+      })
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -147,35 +116,9 @@ export default function StaffRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070d1e] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
-      {/* ======================================================== */}
-      {/* MULTI-COLOR AMBIENT GLOWS & REDUCED OPACITY BACKGROUND ART */}
-      {/* ======================================================== */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-cyan-500/20 blur-[170px] animate-pulse" style={{ animationDuration: '6s' }} />
-        <div className="absolute top-1/3 -right-40 w-[650px] h-[650px] rounded-full bg-purple-600/20 blur-[180px] animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute -bottom-40 left-1/3 w-[600px] h-[600px] rounded-full bg-emerald-500/15 blur-[170px] animate-pulse" style={{ animationDuration: '7s' }} />
-
-        {/* AI Medical Holographic Grid (Reduced Opacity) */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.07] stroke-cyan-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="register-grid" width="100" height="100" patternUnits="userSpaceOnUse">
-              <circle cx="50" cy="50" r="1.5" fill="#38bdf8" />
-              <path d="M 50 0 L 50 100 M 0 50 L 100 50" fill="none" stroke="currentColor" strokeWidth="0.4" strokeDasharray="3 3" />
-              <circle cx="50" cy="50" r="28" fill="none" stroke="#818cf8" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#register-grid)" />
-        </svg>
-
-        {/* Floating Icons with Reduced Opacity */}
-        <div className="absolute top-20 right-12 opacity-10 text-cyan-400">
-          <Activity className="w-56 h-56 animate-pulse" />
-        </div>
-        <div className="absolute bottom-20 left-12 opacity-10 text-purple-400">
-          <Microscope className="w-52 h-52" />
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#080c14] text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
+      {/* ── 5 AI Background Visuals Ambient Backdrop with Opacity ── */}
+      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
 
       <div className="max-w-4xl w-full mx-auto relative z-10 space-y-6">
         {/* Back Button & Header */}

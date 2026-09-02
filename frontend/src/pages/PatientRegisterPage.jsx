@@ -1,15 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, Phone, User, Calendar,
   CheckCircle2, Shield, AlertCircle, ArrowLeft, UserRound, MapPin, Droplet,
-  Activity, Microscope
+  Activity, Microscope, Sparkles
 } from 'lucide-react'
-import { loginSuccess } from '../store/slices/authSlice'
 import api from '../services/api'
-import { initSocket } from '../services/socket'
+import AppBackdrop from '../components/AppBackdrop'
 
 export default function PatientRegisterPage() {
   const [formData, setFormData] = useState({
@@ -30,7 +28,6 @@ export default function PatientRegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const dispatch = useDispatch()
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -56,10 +53,14 @@ export default function PatientRegisterPage() {
     }
 
     try {
-      const res = await api.post('/auth/patient/register', formData)
-      dispatch(loginSuccess(res.data.data))
-      initSocket(res.data.data.access_token)
-      navigate('/patient/dashboard')
+      await api.post('/auth/patient/register', formData)
+      // Mandatory login post-registration: Redirect to login with pre-filled identifier & notice
+      navigate('/patient/login', {
+        state: {
+          message: 'Account created successfully! Please log in with your credentials or 6-digit OTP to access your patient portal.',
+          emailOrPhone: formData.phone?.trim() || formData.email?.trim()
+        }
+      })
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Registration failed. Please try again.'
       setError(errorMsg)
@@ -69,35 +70,9 @@ export default function PatientRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070d1e] text-slate-100 flex items-center justify-center p-4 py-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
-      {/* ======================================================== */}
-      {/* MULTI-COLOR AMBIENT GLOWS & REDUCED OPACITY BACKGROUND ART */}
-      {/* ======================================================== */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-cyan-500/20 blur-[170px] animate-pulse" style={{ animationDuration: '6s' }} />
-        <div className="absolute top-1/3 -right-40 w-[650px] h-[650px] rounded-full bg-purple-600/20 blur-[180px] animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute -bottom-40 left-1/3 w-[600px] h-[600px] rounded-full bg-emerald-500/15 blur-[170px] animate-pulse" style={{ animationDuration: '7s' }} />
-
-        {/* AI Medical Grid (Reduced Opacity) */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.07] stroke-cyan-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="patient-reg-grid" width="100" height="100" patternUnits="userSpaceOnUse">
-              <circle cx="50" cy="50" r="1.5" fill="#38bdf8" />
-              <path d="M 50 0 L 50 100 M 0 50 L 100 50" fill="none" stroke="currentColor" strokeWidth="0.4" strokeDasharray="3 3" />
-              <circle cx="50" cy="50" r="28" fill="none" stroke="#818cf8" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#patient-reg-grid)" />
-        </svg>
-
-        {/* Floating Icons with Reduced Opacity */}
-        <div className="absolute top-16 right-12 opacity-10 text-cyan-400">
-          <Activity className="w-56 h-56 animate-pulse" />
-        </div>
-        <div className="absolute bottom-20 left-12 opacity-10 text-purple-400">
-          <HeartPulse className="w-52 h-52" />
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#080c14] text-slate-100 flex items-center justify-center p-4 py-12 relative overflow-hidden selection:bg-cyan-500 selection:text-white">
+      {/* ── 5 AI Background Visuals Ambient Backdrop with Opacity ── */}
+      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
 
       <div className="max-w-2xl w-full mx-auto relative z-10">
         {/* Back Button */}

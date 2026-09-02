@@ -9,14 +9,7 @@ import {
 export default function MedicalTechHologram({ onAction }) {
   const [activeTab, setActiveTab] = useState(0)
   const [bpm, setBpm] = useState(78)
-  const [scanProgress, setScanProgress] = useState(99.8)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setBpm(74 + Math.floor(Math.random() * 8))
-    }, 2500)
-    return () => clearInterval(interval)
-  }, [])
+  const [isPaused, setIsPaused] = useState(false)
 
   const modules = [
     {
@@ -73,10 +66,31 @@ export default function MedicalTechHologram({ onAction }) {
     }
   ]
 
+  // Dynamic heart rate fluctuation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBpm(74 + Math.floor(Math.random() * 8))
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Auto-Cycle AI Hologram Studio every 1.8 seconds (pauses briefly on user interaction)
+  useEffect(() => {
+    if (isPaused) return
+    const autoCycle = setInterval(() => {
+      setActiveTab((prev) => (prev + 1) % modules.length)
+    }, 1800)
+    return () => clearInterval(autoCycle)
+  }, [isPaused, modules.length])
+
   const current = modules[activeTab]
 
   return (
-    <div className="relative rounded-3xl p-5 sm:p-6 glass-panel border-2 border-emerald-500/40 shadow-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-950/95 overflow-hidden">
+    <div
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="relative rounded-3xl p-5 sm:p-6 glass-panel border-2 border-emerald-500/40 shadow-2xl bg-gradient-to-b from-slate-900/90 via-slate-950/95 to-slate-950/95 overflow-hidden"
+    >
       {/* Laser Scanning Line moving down */}
       <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent pointer-events-none animate-scan-beam z-30" />
 
@@ -87,8 +101,11 @@ export default function MedicalTechHologram({ onAction }) {
       <div className="relative z-20 flex items-center justify-between pb-4 border-b border-slate-800">
         <div className="flex items-center space-x-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-          <span className="text-xs font-black uppercase tracking-widest text-white">
+          <span className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-1.5">
             AI Hologram Studio
+            <span className="text-[9px] font-mono font-normal text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-500/30">
+              Live Auto-Scan
+            </span>
           </span>
         </div>
         <div className="flex items-center space-x-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
@@ -98,10 +115,14 @@ export default function MedicalTechHologram({ onAction }) {
             return (
               <button
                 key={m.id}
-                onClick={() => setActiveTab(idx)}
+                onClick={() => {
+                  setActiveTab(idx)
+                  setIsPaused(true)
+                  setTimeout(() => setIsPaused(false), 3000)
+                }}
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
                   isActive
-                    ? `bg-gradient-to-r ${m.color} text-white shadow-md`
+                    ? `bg-gradient-to-r ${m.color} text-white shadow-md scale-105`
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -123,7 +144,7 @@ export default function MedicalTechHologram({ onAction }) {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.25 }}
               className="w-full flex flex-col items-center"
             >
               <div className="relative w-full max-w-sm rounded-2xl bg-slate-950/90 border border-cyan-500/40 p-4 shadow-xl">
@@ -177,7 +198,7 @@ export default function MedicalTechHologram({ onAction }) {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.25 }}
               className="w-full flex flex-col items-center"
             >
               <div className="relative w-44 h-44 flex items-center justify-center">
@@ -224,7 +245,7 @@ export default function MedicalTechHologram({ onAction }) {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.25 }}
               className="w-full flex flex-col items-center"
             >
               <div className="relative w-full max-w-sm rounded-2xl bg-slate-950/90 border border-emerald-500/40 p-4 shadow-xl">
@@ -274,7 +295,7 @@ export default function MedicalTechHologram({ onAction }) {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.25 }}
               className="w-full flex flex-col items-center"
             >
               <div className="relative w-44 h-44 flex items-center justify-center">

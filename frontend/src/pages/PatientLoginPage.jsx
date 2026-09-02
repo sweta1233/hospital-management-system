@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -32,6 +32,17 @@ export default function PatientLoginPage() {
   const [loading, setLoading] = useState(false)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Pre-fill identifier & message from registration redirect
+  useEffect(() => {
+    if (location.state?.emailOrPhone) {
+      setEmailOrPhone(location.state.emailOrPhone)
+    }
+    if (location.state?.message) {
+      setInfoMsg(location.state.message)
+    }
+  }, [location.state])
 
   // Resend Countdown Timer
   useEffect(() => {
@@ -149,8 +160,8 @@ export default function PatientLoginPage() {
 
   return (
     <div className="min-h-screen text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-10 relative overflow-hidden bg-[#080c14] selection:bg-cyan-500 selection:text-white">
-      {/* ── 5 AI Background Visuals Ambient Backdrop with Low Opacity ── */}
-      <AppBackdrop opacity="opacity-15" showSwitcher={false} />
+      {/* ── 5 AI Background Visuals Ambient Backdrop with Opacity ── */}
+      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
 
       {/* Main Dual-Panel Container */}
       <div className="max-w-5xl w-full mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">

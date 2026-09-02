@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -34,6 +34,18 @@ export default function StaffLoginPage() {
   const [loading, setLoading] = useState(false)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Pre-fill email and display registration flash message
+  useEffect(() => {
+    if (location.state?.emailOrPhone) {
+      setEmail(location.state.emailOrPhone)
+      setPassword('')
+    }
+    if (location.state?.message) {
+      setInfoMsg(location.state.message)
+    }
+  }, [location.state])
 
   // Resend Countdown Timer
   useEffect(() => {
@@ -189,8 +201,8 @@ export default function StaffLoginPage() {
 
   return (
     <div className="min-h-screen text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden bg-[#080c14] selection:bg-purple-500 selection:text-white">
-      {/* ── 5 AI Background Visuals Ambient Backdrop with Low Opacity ── */}
-      <AppBackdrop opacity="opacity-15" showSwitcher={false} />
+      {/* ── 5 AI Background Visuals Ambient Backdrop with Opacity ── */}
+      <AppBackdrop opacity="opacity-35" showSwitcher={false} />
 
       <div className="max-w-5xl w-full mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Left Side: Clinical Roles Selector (5 Cols) */}

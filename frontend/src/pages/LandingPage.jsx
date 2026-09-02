@@ -62,31 +62,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 selection:bg-emerald-500 selection:text-white relative overflow-hidden">
-      {/* ── 5 AI-Generated Uploaded Background Images with Low Opacity ── */}
-      <AppBackdrop opacity="opacity-20" showSwitcher={true} />
+      {/* ── 5 AI-Generated Uploaded Background Images with High-Visibility Layer ── */}
+      <AppBackdrop opacity="opacity-45" showSwitcher={true} />
 
       <div className="relative z-10">
-        {/* Real-Time Live Status Bar */}
-        <div className="bg-slate-950/80 backdrop-blur-md border-b border-emerald-500/25 py-1.5 px-4 text-[11px] font-medium text-slate-300">
-          <div className="max-w-7xl mx-auto flex items-center justify-between overflow-x-auto gap-4">
-            <div className="flex items-center space-x-2 flex-shrink-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-              <span className="text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
-                Live Hospital Status
-              </span>
-            </div>
-            <div className="flex items-center space-x-6 text-slate-300 flex-shrink-0 text-xs font-semibold">
-              <span className="text-rose-400 flex items-center gap-1">🚨 24/7 Trauma Emergency</span>
-              <span className="text-emerald-400 flex items-center gap-1">👩‍⚕️ 48 Doctors Online</span>
-              <span className="text-purple-400 flex items-center gap-1">🧪 Pathology Lab Express</span>
-              <span className="text-cyan-400 flex items-center gap-1">📹 HD Telehealth Active</span>
-            </div>
-            <div className="flex items-center space-x-1.5 text-emerald-300 font-mono flex-shrink-0 text-[10px] font-bold bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
-              <span>SYSTEM 100% OPERATIONAL</span>
-            </div>
-          </div>
-        </div>
-
         {/* Main Header / Navigation */}
         <header className="border-b border-slate-800/80 backdrop-blur-xl bg-slate-950/70 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">

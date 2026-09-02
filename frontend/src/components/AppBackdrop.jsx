@@ -9,50 +9,50 @@ const BACKGROUND_IMAGES = [
   { id: 'bg5', src: '/images/bg5.png', label: 'Quantum Medical Core' },
 ]
 
-export default function AppBackdrop({ opacity = 'opacity-20', showSwitcher = false }) {
+export default function AppBackdrop({ opacity = 'opacity-45', showSwitcher = false }) {
   const [currentIdx, setCurrentIdx] = useState(0)
 
-  // Auto-cycle through all 5 images every 8 seconds for a rich ambient experience
+  // Auto-cycle through all 5 AI background scenes every 7.5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % BACKGROUND_IMAGES.length)
-    }, 8000)
+    }, 7500)
     return () => clearInterval(timer)
   }, [])
 
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#080c14]">
-      {/* ── Low-Opacity 5-Image Ambient Layer with Smooth Crossfade ── */}
+      {/* ── High-Visibility Ambient Background Image Layer with Crossfade ── */}
       <AnimatePresence mode="sync">
         <motion.div
           key={BACKGROUND_IMAGES[currentIdx].id}
           initial={{ opacity: 0, scale: 1.04 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 1.8, ease: 'easeInOut' }}
+          transition={{ duration: 1.6, ease: 'easeInOut' }}
           className={`absolute inset-0 ${opacity} bg-cover bg-center bg-no-repeat transition-all duration-1000`}
           style={{
             backgroundImage: `url(${BACKGROUND_IMAGES[currentIdx].src})`,
-            filter: 'contrast(1.15) brightness(0.85) saturate(1.1)',
+            filter: 'contrast(1.1) brightness(0.95) saturate(1.2)',
           }}
         />
       </AnimatePresence>
 
-      {/* ── Modern Neutral Dark Graphite Gradient Overlays (Zero Deep Blue) ── */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#080c14]/85 via-[#0a0e1a]/80 to-[#080c14]/95" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-transparent via-[#080c14]/60 to-[#080c14]" />
+      {/* ── Softened Neutral Dark Graphite Overlay (Allows Background Visuals to Shine Through) ── */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#080c14]/55 via-[#0a0e1a]/45 to-[#080c14]/75" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-transparent via-[#080c14]/30 to-[#080c14]/65" />
 
       {/* ── Cyber Medical Ambient Light Flares ── */}
       <div
-        className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-emerald-500/10 blur-[140px] animate-pulse pointer-events-none"
+        className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-emerald-500/15 blur-[140px] animate-pulse pointer-events-none"
         style={{ animationDuration: '8s' }}
       />
       <div
-        className="absolute top-1/3 -right-32 w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[150px] animate-pulse pointer-events-none"
+        className="absolute top-1/3 -right-32 w-[600px] h-[600px] rounded-full bg-cyan-500/15 blur-[150px] animate-pulse pointer-events-none"
         style={{ animationDuration: '9s' }}
       />
       <div
-        className="absolute -bottom-40 left-1/4 w-[650px] h-[650px] rounded-full bg-purple-600/10 blur-[160px] animate-pulse pointer-events-none"
+        className="absolute -bottom-40 left-1/4 w-[650px] h-[650px] rounded-full bg-purple-600/15 blur-[160px] animate-pulse pointer-events-none"
         style={{ animationDuration: '10s' }}
       />
 
